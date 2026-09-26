@@ -13,6 +13,13 @@ EMERGENCY_MESSAGE = (
     "campus emergency channel before using normal infrastructure triage."
 )
 
+_TRAPPED_PERSON = (
+    r"\b(?:someone|somebody|a person|people|a student|students|my friend|"
+    r"i am|i'm|we are|we're) (?:is |are )?(?:still )?(?:trapped|stuck) "
+)
+_STUCK_ELEVATOR = re.compile(r"(?:an? |the )?(?:elevator|lift) (?:is )?(?:still )?stuck")
+_TRAPPED_INSIDE = re.compile(_TRAPPED_PERSON + r"(?:inside(?: it)?|in it)")
+
 _RULES = tuple(re.compile(pattern) for pattern in (
     r"\b(?:active|ongoing) (?:electrical )?fire\b"
     r"(?! (?:alarm|panel|drill|door|extinguisher|exit|damage))",
@@ -22,8 +29,7 @@ _RULES = tuple(re.compile(pattern) for pattern in (
     r"\b(?:gas leak|gas is leaking)\b(?! (?:detector|sensor|drill|test))",
     r"\b(?:there is|there's|there was|we heard) an? explosion\b",
     r"\ban? explosion (?:has |just )?(?:happened|occurred)\b",
-    r"\b(?:someone|somebody|a person|people|a student|students|my friend|"
-    r"i am|i'm|we are|we're) (?:is |are )?(?:still )?(?:trapped|stuck) "
+    _TRAPPED_PERSON +
     r"(?:inside|in) (?:an? |the )?(?:elevator|lift)\b",
     r"\b(?:someone|somebody|a person|a student|my friend) "
     r"(?:is |has been )?(?:seriously|severely|critically) injured\b",
@@ -48,8 +54,17 @@ _RESOLVED = re.compile(
 
 def is_emergency(text: str) -> bool:
     normalized = text.lower().replace("’", "'")
+    stuck_elevator = False
     for raw_clause in _CLAUSE_BREAK.split(normalized):
         clause = " ".join(raw_clause.split())
+        reference = clause.strip(" ,")
+        if not reference:
+            continue
+        # Only complete affirmative clauses may share elevator context. Qualifiers
+        # such as negation, drills, or resolution cannot leak into this narrow rule.
+        if stuck_elevator and _TRAPPED_INSIDE.fullmatch(reference):
+            return True
+        stuck_elevator = _STUCK_ELEVATOR.fullmatch(reference) is not None
         if _NON_CURRENT.search(clause):
             continue
         for rule in _RULES:

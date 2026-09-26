@@ -1,5 +1,7 @@
 """Process-local storage; reports, suggestions, and associations share one lock."""
 
+from __future__ import annotations
+
 from collections.abc import Iterable
 from datetime import datetime
 from threading import Lock
