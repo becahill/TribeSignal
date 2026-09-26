@@ -8,7 +8,10 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from .ai import GeminiIssueAnalyzer, IssueAnalyzer, analyze_report
+from .analysis_models import AnalysisRequest, AnalysisResponse, AnalysisUnavailable
 from .demo_data import build_demo_issues
 from .models import Issue, IssueCreate, IssueResponse
 from .priority import calculate_priority
@@ -32,6 +35,10 @@ def get_repository(request: Request) -> IssueRepository:
     return request.app.state.repository
 
 
+def get_analyzer(request: Request) -> IssueAnalyzer:
+    return request.app.state.analyzer
+
+
 def get_now(request: Request) -> datetime:
     now = request.app.state.clock()
     if now.tzinfo is None or now.utcoffset() is None:
@@ -40,6 +47,7 @@ def get_now(request: Request) -> datetime:
 
 
 RepositoryDependency = Annotated[IssueRepository, Depends(get_repository)]
+AnalyzerDependency = Annotated[IssueAnalyzer, Depends(get_analyzer)]
 NowDependency = Annotated[datetime, Depends(get_now)]
 
 
@@ -60,6 +68,7 @@ def create_app(
     repository: IssueRepository | None = None,
     clock: Clock = utc_now,
     cors_origins: Sequence[str] | None = None,
+    analyzer: IssueAnalyzer | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="TribeSignal",
@@ -74,6 +83,7 @@ def create_app(
         )
     app.state.repository = repository
     app.state.clock = clock
+    app.state.analyzer = analyzer if analyzer is not None else GeminiIssueAnalyzer()
     if cors_origins is None:
         configured_origins = os.getenv("TRIBESIGNAL_CORS_ORIGINS")
         cors_origins = (
@@ -91,6 +101,17 @@ def create_app(
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.post(
+        "/issues/analyze",
+        response_model=AnalysisResponse,
+        responses={503: {"model": AnalysisUnavailable}},
+    )
+    def analyze_issue(payload: AnalysisRequest, analyzer: AnalyzerDependency):
+        result = analyze_report(payload.text, analyzer)
+        if isinstance(result, AnalysisUnavailable):
+            return JSONResponse(status_code=503, content=result.model_dump())
+        return result
 
     @app.post("/issues", response_model=IssueResponse, status_code=status.HTTP_201_CREATED)
     def create_issue(

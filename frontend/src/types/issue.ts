@@ -3,6 +3,31 @@ export const severities = ['low', 'moderate', 'high', 'critical'] as const;
 export type Severity = (typeof severities)[number];
 export type IssueStatus = 'reported' | 'triaged' | 'routed';
 
+export const analysisCategories = [
+  'Elevator',
+  'Electrical',
+  'Plumbing',
+  'Walkway',
+  'Lighting',
+  'Network',
+  'Other',
+] as const;
+
+// This proposal cannot supply severity or server-owned priority data.
+export interface AnalysisProposal {
+  title: string;
+  description: string;
+  location: string;
+  category: (typeof analysisCategories)[number];
+  accessibility_impact: boolean;
+  safety_impact: boolean;
+}
+
+export type AnalysisResponse =
+  | { status: 'review'; proposal: AnalysisProposal }
+  | { status: 'emergency'; message: string }
+  | { status: 'unavailable'; message: string };
+
 export interface IssueCreate {
   title: string;
   description: string;

@@ -1,5 +1,5 @@
 # TribeSignal
-An AI-assisted triage layer for campus infrastructure issues, providing transparent classification, deterministic prioritization, and routing between reporters and response teams.
+An AI-assisted triage layer for campus infrastructure issues, with optional report organization and transparent deterministic prioritization.
 
 TribeSignal sits between community intake and operational teams/systems such as
 TMA/FAMIS. It is a transparent triage layer, not a replacement work-order system.
@@ -7,9 +7,8 @@ AI never determines, adjusts, ranks, or overrides priority.
 
 ## Backend development
 
-The first vertical slice provides issue intake, retrieval, confirmations, and an
-auditable deterministic priority calculation. There is no AI integration in this
-slice. Python 3.11+ is required.
+The backend provides issue intake, retrieval, confirmations, optional Gemini
+analysis, and an auditable deterministic priority calculation. Python 3.11+ is required.
 
 From the repository root:
 
@@ -29,8 +28,69 @@ backend/.venv/bin/python -m pytest -c backend/pyproject.toml backend/tests
 
 The modules under `backend/app/` separate validated data (`models.py`), the sole
 priority implementation (`priority.py`), storage (`repository.py`), and the HTTP
-API (`main.py`). `create_app` accepts an injected repository and clock for tests.
+API (`main.py`). `create_app` accepts an injected repository, clock, and
+`IssueAnalyzer` for tests. `ai.py` owns the Gemini adapter and analysis service;
+`analysis_models.py` defines the proposal-only contract and `safety.py` the
+deterministic emergency check. Tests use fake analyzers and mocked SDK clients,
+never live Gemini calls.
 No frontend priority calculation is needed.
+
+## Optional Gemini-assisted intake
+
+The report dialog starts with **What are you seeing?**. **Analyze report** runs a
+deterministic emergency pre-check before sending the description to Gemini.
+The reporter then edits the proposed title, description, location, category, and
+impact flags, explicitly chooses severity (no default), and confirms review.
+Only **Submit report** creates an issue, through the existing `POST /issues`.
+AI structures facts; it never supplies severity, priority, urgency, or ranking.
+The backend priority formula is unchanged. Impact flags are proposals too and
+must be reviewed because the final human-approved flags are inputs to that formula.
+
+To enable assistance, set **`GEMINI_API_KEY` in the backend environment only**.
+Optionally copy `backend/.env.example` to `backend/.env`, edit it locally, then
+load it before starting the backend (the application does not auto-load files):
+
+```sh
+set -a
+source backend/.env
+set +a
+backend/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
+```
+
+Never put the key in a `VITE_` variable or frontend file. Local `.env` files are
+ignored; examples contain no credentials. The adapter uses the official
+[Google Gen AI Python SDK](https://googleapis.github.io/python-genai/) with
+schema-constrained JSON and local validation, using stable
+[`gemini-3.5-flash-lite`](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite).
+It uses a 15-second HTTP timeout with no retries; the browser gives analysis
+20 seconds and lets the reporter switch to manual entry while waiting.
+
+**Enter details manually** is always available before analysis and on failure.
+Missing configuration, provider errors, timeouts, or malformed proposals return
+an unavailable state without fabricating data or storing an issue. The original
+description is retained for manual entry. Raw provider errors are not returned or
+logged by the application. No Gemini key is required for normal reporting or demo mode.
+
+The emergency gate matches explicit English phrases for active fire, gas leaks,
+explosions, people trapped in elevators, serious injury, smoke with breathing
+danger, threats to life, and floodwater contacting live electrical equipment.
+Explicit local negation, conditional, historical, and drill contexts are excluded;
+a damaged fire alarm panel alone does not trigger it. A match stops analysis
+before any SDK client is created and shows emergency-channel guidance, with an
+option to correct the description. It never creates an issue or sets severity.
+These conservative rules are not comprehensive emergency detection or medical
+diagnosis. The gate applies to `/issues/analyze`; the manual `POST /issues`
+contract remains unchanged.
+
+Browser verification after starting both services:
+
+- With a valid backend key: describe the Swem elevator problem → analyze → edit
+  the proposal → verify severity starts blank → choose severity and review the
+  facts/flags → submit → expand the queue's deterministic priority explanation.
+- Without a key: analyze a routine report → unavailable message → enter details
+  manually → choose severity → submit successfully. Direct manual entry also works.
+- Analyze “Someone is trapped in an elevator.” → emergency guidance, no review
+  or submit action → edit the description to correct an incorrect detection.
 
 ## Demo mode
 
@@ -111,11 +171,22 @@ confirmations. The client does not automatically retry writes.
 | --- | --- |
 | `GET /health` | `200`, `{"status": "ok"}` |
 | `POST /issues` | `201`, newly created issue with priority |
+| `POST /issues/analyze` | `200`, editable proposal or emergency stop; `503`, assistance unavailable |
 | `GET /issues` | `200`, array of issues in creation order with current priorities |
 | `GET /issues/{issue_id}` | `200`, issue with current priority |
 | `POST /issues/{issue_id}/confirm` | `200`, updated issue with current priority; no body required |
 
 Unknown UUIDs return `404`; invalid UUIDs or request bodies return `422`.
+
+Analysis accepts exactly `{"text": "..."}`: whitespace is trimmed, content must
+be nonempty, and the limit is 10,000 characters. Responses are discriminated by
+`status`: `review` with `proposal`, `emergency` with `message`, or `unavailable`
+with `message`. Proposals contain only `title`, `description`, `location`,
+`category`, `accessibility_impact`, and `safety_impact`. An unknown location stays
+blank for the human to fill. Categories are `Elevator`, `Electrical`, `Plumbing`,
+`Walkway`, `Lighting`, `Network`, and `Other`; unsupported provider categories or
+extra fields are rejected with the manual-fallback state. Analysis never stores
+an issue, changes the queue, or calls the priority engine.
 
 Example intake:
 
@@ -137,7 +208,8 @@ Severity values are `low`, `moderate`, `high`, and `critical`. Both impact flags
 default to `false` and accept JSON booleans only. The remaining intake fields are
 required. Text is trimmed and must be nonempty; description is limited to 10,000
 characters and title/location/category to 200. Location and category are free
-text for now. Unknown fields, including attempts to set server-owned fields, are
+text in the creation API for compatibility; only AI proposals use the controlled
+category set. Unknown fields, including attempts to set server-owned fields, are
 rejected.
 
 The server assigns a UUID, UTC-aware `created_at`, status `reported`, and zero
@@ -182,5 +254,5 @@ CORS allows `localhost` and `127.0.0.1` on ports 3000 and 5173 by default. Overr
 with the comma-separated `TRIBESIGNAL_CORS_ORIGINS` environment variable. No
 credentialed cross-origin requests are enabled.
 
-This slice does not implement routing actions, deduplication, AI, authentication,
+This slice does not implement routing actions, deduplication, authentication,
 notifications, downstream integrations, maps, analytics dashboards, or a production database.

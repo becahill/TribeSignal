@@ -1,4 +1,10 @@
-import { severities, type Issue, type IssueCreate } from '../types/issue';
+import {
+  analysisCategories,
+  severities,
+  type AnalysisResponse,
+  type Issue,
+  type IssueCreate,
+} from '../types/issue';
 
 const API_BASE = (
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -69,6 +75,49 @@ function parseIssue(value: unknown): Issue {
   return value;
 }
 
+function parseAnalysis(value: unknown): AnalysisResponse {
+  if (record(value)) {
+    if (
+      (value.status === 'emergency' || value.status === 'unavailable') &&
+      Object.keys(value).length === 2 &&
+      text(value.message)
+    )
+      return { status: value.status, message: value.message };
+    if (
+      value.status === 'review' &&
+      Object.keys(value).length === 2 &&
+      record(value.proposal)
+    ) {
+      const proposal = value.proposal;
+      const fields = [
+        'title',
+        'description',
+        'location',
+        'category',
+        'accessibility_impact',
+        'safety_impact',
+      ];
+      if (
+        Object.keys(proposal).length === fields.length &&
+        Object.keys(proposal).every((key) => fields.includes(key)) &&
+        text(proposal.title) &&
+        proposal.title.length <= 200 &&
+        text(proposal.description) &&
+        proposal.description.length <= 10000 &&
+        typeof proposal.location === 'string' &&
+        proposal.location.length <= 200 &&
+        analysisCategories.some((category) => category === proposal.category) &&
+        typeof proposal.accessibility_impact === 'boolean' &&
+        typeof proposal.safety_impact === 'boolean'
+      )
+        return value as AnalysisResponse;
+    }
+  }
+  throw new ApiError(
+    'AI returned an invalid proposal. You can enter the report details manually.',
+  );
+}
+
 function responseError(data: unknown, status: number): ApiError {
   if (record(data) && Array.isArray(data.detail)) {
     const fields: FieldErrors = {};
@@ -106,12 +155,13 @@ async function request(
   path: string,
   options: RequestInit = {},
   signal?: AbortSignal,
+  timeoutMs = 10000,
 ): Promise<unknown> {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
   if (signal?.aborted) controller.abort();
-  const timeout = window.setTimeout(abort, 10000);
+  const timeout = window.setTimeout(abort, timeoutMs);
   try {
     const response = await fetch(`${API_BASE}${path}`, {
       ...options,
@@ -125,13 +175,19 @@ async function request(
         'The service returned an unreadable response. Refresh the queue to try again.',
       );
     }
-    if (!response.ok) throw responseError(data, response.status);
+    if (!response.ok) {
+      if (path === '/issues/analyze' && response.status === 503) {
+        const analysis = parseAnalysis(data);
+        if (analysis.status === 'unavailable') return analysis;
+      }
+      throw responseError(data, response.status);
+    }
     return data;
   } catch (error) {
     if (signal?.aborted) throw error;
     if (error instanceof ApiError) throw error;
     const uncertain =
-      options.method === 'POST'
+      options.method === 'POST' && path !== '/issues/analyze'
         ? ' Check the queue before retrying; your request may have been saved.'
         : ' Check that the local backend is running, then try again.';
     throw new ApiError(`Unable to reach the triage service.${uncertain}`);
@@ -142,6 +198,28 @@ async function request(
 }
 
 export const issuesApi = {
+  async analyze(text: string, signal?: AbortSignal): Promise<AnalysisResponse> {
+    try {
+      return parseAnalysis(
+        await request(
+          '/issues/analyze',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+          },
+          signal,
+          20000,
+        ),
+      );
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      // Analysis never writes. Failure must not imply an issue might be saved.
+      throw new ApiError(
+        'AI assistance is unavailable. You can enter the report details manually.',
+      );
+    }
+  },
   async list(signal?: AbortSignal): Promise<Issue[]> {
     const data = await request('/issues', {}, signal);
     if (!Array.isArray(data))

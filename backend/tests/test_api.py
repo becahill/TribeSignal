@@ -175,5 +175,6 @@ def test_openapi_contract(client):
     response = client.get("/openapi.json")
     assert response.status_code == 200
     assert set(response.json()["paths"]) == {
-        "/health", "/issues", "/issues/{issue_id}", "/issues/{issue_id}/confirm"
+        "/health", "/issues", "/issues/analyze", "/issues/{issue_id}",
+        "/issues/{issue_id}/confirm"
     }
