@@ -1,5 +1,6 @@
 """Process-local storage behind a small replaceable repository interface."""
 
+from collections.abc import Iterable
 from threading import Lock
 from typing import Protocol
 from uuid import UUID
@@ -18,8 +19,11 @@ class IssueRepository(Protocol):
 
 
 class InMemoryIssueRepository:
-    def __init__(self) -> None:
-        self._issues: dict[UUID, Issue] = {}
+    def __init__(self, initial_issues: Iterable[Issue] | None = None) -> None:
+        self._issues: dict[UUID, Issue] = {
+            issue.id: issue.model_copy(deep=True)
+            for issue in (initial_issues if initial_issues is not None else ())
+        }
         self._lock = Lock()
 
     def add(self, issue: Issue) -> Issue:

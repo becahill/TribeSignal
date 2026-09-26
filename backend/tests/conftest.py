@@ -6,6 +6,12 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 
 
+@pytest.fixture(autouse=True)
+def clear_demo_mode(monkeypatch):
+    # Keep default-behavior tests independent of the developer's environment.
+    monkeypatch.delenv("TRIBESIGNAL_DEMO_MODE", raising=False)
+
+
 @pytest.fixture
 def now():
     return datetime(2026, 9, 26, 12, tzinfo=timezone.utc)

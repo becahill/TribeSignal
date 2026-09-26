@@ -32,6 +32,24 @@ priority implementation (`priority.py`), storage (`repository.py`), and the HTTP
 API (`main.py`). `create_app` accepts an injected repository and clock for tests.
 No frontend priority calculation is needed.
 
+## Demo mode
+
+After backend setup, start from the repository root with:
+
+```sh
+TRIBESIGNAL_DEMO_MODE=true \
+backend/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
+```
+
+This loads six fictional William & Mary campus reports with stable IDs, including
+two intentionally similar Swem elevator reports. Priorities are calculated live
+by the existing deterministic engine; the seed data contains no priority scores.
+Restarting or reloading in demo mode restores the known dataset, with report ages
+relative to startup. Changes made during a session are not persisted. The flag
+also accepts `1`, `yes`, and `on` (case-insensitive). Running without the variable
+preserves the empty in-memory behavior. Explicitly injected repositories are
+always used as supplied, regardless of the flag.
+
 ## Frontend development
 
 The React/TypeScript frontend provides issue reporting, a queue sorted by the

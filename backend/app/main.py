@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from .demo_data import build_demo_issues
 from .models import Issue, IssueCreate, IssueResponse
 from .priority import calculate_priority
 from .repository import InMemoryIssueRepository, IssueRepository
@@ -64,9 +65,14 @@ def create_app(
         title="TribeSignal",
         description="Transparent issue triage with deterministic, explainable priority.",
     )
-    app.state.repository = (
-        repository if repository is not None else InMemoryIssueRepository()
-    )
+    if repository is None:
+        demo_mode = os.getenv("TRIBESIGNAL_DEMO_MODE", "").strip().lower() in {
+            "1", "true", "yes", "on"
+        }
+        repository = InMemoryIssueRepository(
+            initial_issues=build_demo_issues(clock()) if demo_mode else None
+        )
+    app.state.repository = repository
     app.state.clock = clock
     if cors_origins is None:
         configured_origins = os.getenv("TRIBESIGNAL_CORS_ORIGINS")
