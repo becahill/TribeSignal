@@ -1,0 +1,456 @@
+---
+description: Core TribeSignal product architecture, AI guardrails, engineering priorities, and hackathon development rules.
+globs:
+alwaysApply: true
+---
+
+# TribeSignal Core Project Rules
+
+## Product Identity
+
+TribeSignal is a transparent community infrastructure TRIAGE LAYER.
+
+It sits between:
+
+community issue intake
+→ TribeSignal
+→ responsible operational teams / existing systems such as TMA or FAMIS
+
+TribeSignal is NOT:
+- a generic civic reporting application
+- a social network
+- a replacement work-order system
+- a maintenance management platform
+- an autonomous AI decision-maker
+
+Its purpose is to transform fragmented community reports into structured, deduplicated, prioritized, routable, and transparent operational signals.
+
+Always preserve this product positioning in architecture, UI copy, code, documentation, and demo features.
+
+---
+
+# Core Workflow
+
+The intended flow is:
+
+1. A community member reports an infrastructure issue.
+2. TribeSignal structures the report.
+3. TribeSignal classifies the issue.
+4. TribeSignal checks for likely duplicates.
+5. Related reports contribute confirmations to a canonical issue.
+6. TribeSignal computes deterministic priority.
+7. TribeSignal exposes a human-readable priority breakdown.
+8. TribeSignal routes the issue toward the appropriate operational team.
+9. TribeSignal transparently displays triage/status information.
+10. Existing operational systems remain responsible for actual work-order execution.
+
+---
+
+# AI Boundary
+
+AI MUST NEVER determine, score, rank, or decide issue priority.
+
+Do not:
+- ask an LLM for an urgency score
+- ask an LLM to rank issues
+- generate priority from model confidence
+- use an embedding similarity score as priority
+- silently allow AI classification to become a consequential decision
+
+AI MAY assist with:
+- extracting structured information from free text
+- generating concise summaries
+- suggesting categories
+- normalizing location information
+- identifying possible duplicate reports
+- suggesting routing destinations
+- identifying possible accessibility or safety concerns
+
+AI output must be treated as probabilistic assistance.
+
+Where appropriate, preserve:
+- confidence
+- uncertainty
+- source/origin of a field
+- human confirmation state
+
+AI must not invent missing facts.
+
+Core functionality must degrade gracefully if an AI service is unavailable.
+
+---
+
+# Deterministic Priority Engine
+
+Priority P is in the range [1, 10].
+
+Use:
+
+P = min(
+    10,
+    severity_base
+    + accessibility_weight
+    + safety_weight
+    + confirmation_term
+    + aging_term
+)
+
+Severity bases:
+
+Low = 1.0
+Moderate = 2.5
+High = 4.0
+Critical = 5.5
+
+Accessibility:
+
+true = +1.5
+false = +0.0
+
+Safety:
+
+true = +2.0
+false = +0.0
+
+Confirmation term for C >= 1:
+
+f(C) = min(2.0, 0.6 * ln(C))
+
+Aging term:
+
+g(T) = min(1.0, HoursOpen / 72)
+
+Final:
+
+P = min(
+    10,
+    severity_base
+    + accessibility
+    + safety
+    + min(2.0, 0.6 * ln(confirmations))
+    + min(1.0, hours_open / 72)
+)
+
+Priority logic must live in one authoritative backend module.
+
+Do not duplicate priority calculations in the frontend.
+
+The same input must always produce the same score.
+
+---
+
+# Priority Explainability
+
+Every calculated priority must expose its component breakdown.
+
+Conceptually:
+
+{
+  "score": 8.31,
+  "components": {
+    "severity": 4.0,
+    "accessibility": 1.5,
+    "safety": 2.0,
+    "confirmations": 0.66,
+    "aging": 0.15
+  }
+}
+
+The UI should be able to answer:
+
+"Why does this issue have this priority?"
+
+Never display an unexplained opaque priority number.
+
+---
+
+# Duplicate Detection
+
+Duplicate detection should consider signals such as:
+- location
+- category
+- normalized description
+- semantic similarity
+
+Prefer conservative behavior.
+
+Do not blindly merge reports because their text is similar.
+
+A likely duplicate may be surfaced as a suggestion or associated only when confidence and contextual evidence are strong.
+
+A canonical issue may aggregate:
+- confirmations
+- source reports
+- timestamps
+- supporting descriptions
+
+---
+
+# Routing
+
+Once an issue category is established, prefer deterministic routing rules over AI-generated routing decisions.
+
+Example:
+
+elevator -> Facilities / Elevator Maintenance
+plumbing -> Facilities / Plumbing
+electrical -> Facilities / Electrical
+network -> IT
+
+AI may suggest a category or destination, but transparent rules should perform routing wherever feasible.
+
+---
+
+# Canonical Domain Concepts
+
+Prefer these terms consistently:
+
+- issue
+- report
+- confirmation
+- triage
+- routing
+- responsible team
+- operational team
+- status
+- priority
+- priority breakdown
+- community signal
+- canonical issue
+
+Avoid describing priority as:
+- AI priority
+- AI urgency score
+- AI ranking
+
+---
+
+# Suggested Issue Lifecycle
+
+Keep status modeling simple unless existing code requires otherwise:
+
+Reported
+→ Triaged
+→ Routed
+→ Acknowledged
+→ In Progress
+→ Resolved
+
+The most important TribeSignal-owned stages are:
+
+Reported
+→ Triaged
+→ Routed
+
+Later statuses may represent updates synchronized from downstream operational systems.
+
+---
+
+# Engineering Priorities
+
+This is a hackathon project built by two developers.
+
+Optimize for:
+1. end-to-end reliability
+2. clean architecture
+3. deterministic and testable business logic
+4. polished demo experience
+5. explainability
+6. fast development
+
+Prefer a small vertical slice that works flawlessly over broad unfinished functionality.
+
+Do not introduce infrastructure or abstractions that are unnecessary for the demo.
+
+Before proposing a new feature, determine whether it materially improves:
+- the core workflow
+- demo reliability
+- judge comprehension
+- product differentiation
+
+If not, deprioritize it.
+
+---
+
+# Feature Priority
+
+## Tier 1 — Must Work
+
+- issue submission
+- issue persistence
+- issue dashboard
+- deterministic priority engine
+- priority explanation
+- issue detail
+- confirmations
+- basic status
+- deterministic routing
+- seeded demo data
+
+## Tier 2 — Strong Differentiators
+
+- AI report structuring
+- semantic duplicate detection
+- AI summaries
+- polished timeline
+- operator triage view
+
+## Tier 3 — Only After Core Is Stable
+
+- maps
+- authentication
+- notifications
+- advanced analytics
+- external facilities APIs
+- sophisticated geospatial systems
+- multi-campus administration
+- extensive configuration
+
+Do not sacrifice Tier 1 reliability for Tier 3 features.
+
+---
+
+# Development Rules
+
+Before editing code:
+- inspect the relevant existing files
+- understand the current architecture
+- preserve working functionality
+- avoid unrelated rewrites
+
+When changing code:
+- make targeted changes
+- keep business logic centralized
+- maintain clear frontend/backend contracts
+- validate API inputs
+- handle external-service failures
+- avoid hardcoded duplicate constants
+- avoid unnecessary dependencies
+
+Do not rewrite working modules solely because another style is preferred.
+
+Do not create speculative abstractions before they are required.
+
+When possible, prefer straightforward code over clever code.
+
+---
+
+# Two-Person Git Workflow
+
+This repository is being developed by two people.
+
+Minimize merge-conflict risk.
+
+Before parallelizing major feature work, stabilize:
+- repository structure
+- Issue schema
+- API contracts
+- terminology
+
+Prefer work division by subsystem.
+
+If proposed work is likely to touch files another developer is modifying, warn about the conflict risk.
+
+Use focused commits.
+
+Examples:
+
+feat: add deterministic issue priority engine
+feat: add issue submission endpoint
+feat: add issue dashboard
+feat: add priority breakdown component
+feat: add duplicate detection service
+fix: handle failed AI classification gracefully
+test: add priority engine edge cases
+
+Avoid vague commit messages such as:
+"updates"
+"stuff"
+"changes"
+
+---
+
+# Testing Requirements
+
+The deterministic priority engine must have tests covering:
+
+- low severity
+- moderate severity
+- high severity
+- critical severity
+- accessibility weight
+- safety weight
+- confirmation logarithmic growth
+- confirmation cap
+- aging growth
+- aging cap
+- overall score cap at 10
+- deterministic repeatability
+
+When changing core business logic, add or update tests.
+
+---
+
+# Demo Reliability
+
+Before introducing optional features, protect this flow:
+
+submit issue
+→ store issue
+→ calculate priority
+→ show priority breakdown
+→ route issue
+→ display issue
+→ confirm issue
+→ update visible state
+
+AI failures must not break this flow.
+
+The application should remain demonstrable even if an external model API is unavailable.
+
+---
+
+# Agent Behavior
+
+When asked to implement something:
+
+1. Inspect the repository first.
+2. Identify the smallest robust change.
+3. State which files will change.
+4. Implement against the existing architecture.
+5. Run relevant tests/build checks when possible.
+6. Report what changed.
+7. Flag any unresolved risk.
+
+When asked "what should we do next?", prioritize the current critical path rather than brainstorming unrelated features.
+
+A typical early dependency order is:
+
+domain model
+→ persistence
+→ deterministic priority engine
+→ API contracts
+→ submission
+→ dashboard
+→ issue detail
+→ confirmations
+→ routing
+→ AI/deduplication enhancements
+→ polish
+
+Adjust based on repository state.
+
+---
+
+# Product Anchor
+
+Always keep this sentence conceptually true:
+
+"TribeSignal is a transparent triage layer that turns fragmented community infrastructure reports into structured, deduplicated, prioritized, and routable operational signals."
+
+Protect the distinction between:
+- probabilistic AI assistance
+and
+- deterministic consequential logic
+
+That distinction is fundamental to TribeSignal.
