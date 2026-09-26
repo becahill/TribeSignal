@@ -21,6 +21,7 @@ from .duplicates import DuplicateAnalyzer, GeminiDuplicateAnalyzer, analyze_dupl
 from .models import Issue, IssueCreate, IssueResponse, IssueSnapshot
 from .priority import calculate_priority
 from .repository import InMemoryIssueRepository, IssueRepository, ReviewConflict
+from .routing import route_category
 
 
 Clock = Callable[[], datetime]
@@ -66,6 +67,7 @@ def issue_response(snapshot: IssueSnapshot, now: datetime) -> IssueResponse:
     priority_input = snapshot.issue.model_copy(update={"confirmation_count": effective_count})
     return IssueResponse(
         **snapshot.issue.model_dump(), priority=calculate_priority(priority_input, now=now),
+        routing=route_category(snapshot.canonical_category),
         canonical_issue_id=snapshot.canonical_issue_id,
         effective_confirmation_count=effective_count,
         source_reports=snapshot.source_reports,

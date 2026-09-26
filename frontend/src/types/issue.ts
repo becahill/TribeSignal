@@ -1,4 +1,4 @@
-// Mirrors backend/app/models.py. Priority values are supplied only by the API.
+// Mirrors the backend contract. Priority and routing are supplied only by the API.
 export const severities = ['low', 'moderate', 'high', 'critical'] as const;
 export type Severity = (typeof severities)[number];
 export type IssueStatus = 'reported' | 'triaged' | 'routed';
@@ -58,8 +58,16 @@ export interface SourceReport extends IssueCreate {
   status: IssueStatus;
 }
 
+export interface RoutingDecision {
+  responsible_team: string;
+  category: string;
+  rule: string;
+  is_fallback: boolean;
+}
+
 export interface Issue extends SourceReport {
   priority: Priority;
+  routing: RoutingDecision;
   canonical_issue_id: string;
   effective_confirmation_count: number;
   source_reports: SourceReport[];

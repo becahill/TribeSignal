@@ -710,6 +710,49 @@ h1 {
   color: #926343;
   background: #fbf3e9;
 }
+.issue-routing {
+  display: flex;
+  gap: 9px;
+  margin-top: 14px;
+  padding: 11px 12px;
+  background: #f3f6ef;
+  border: 1px solid #dfe7d8;
+  border-radius: 6px;
+  color: #36543c;
+}
+.issue-routing > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.issue-routing > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.routing-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.routing-team {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+}
+.routing-rule {
+  margin-top: 5px;
+  color: #5f7056;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.routing-fallback {
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: #f6eddb;
+  color: #775f2d;
+}
 .issue-footer {
   display: flex;
   justify-content: space-between;

@@ -7,6 +7,7 @@ import {
   LoaderCircle,
   MapPin,
   Plus,
+  Route,
   Users,
 } from 'lucide-react';
 import { DuplicateReview } from './DuplicateReview';
@@ -105,6 +106,17 @@ export function IssueCard({ issue, isNew, busy, onConfirm, onReview, onRefresh }
                 )}
               </div>
             )}
+            <div className="issue-routing" aria-label="Routing destination">
+              <Route size={17} aria-hidden="true" />
+              <div>
+                <div className="routing-label">
+                  Routes to
+                  {issue.routing.is_fallback && <span className="routing-fallback">Fallback routing</span>}
+                </div>
+                <strong className="routing-team">{issue.routing.responsible_team}</strong>
+                <p className="routing-rule">Routing rule: {issue.routing.rule}</p>
+              </div>
+            </div>
           </div>
         </div>
         <div className="issue-footer">

@@ -1,6 +1,6 @@
 from datetime import timedelta
 from unittest.mock import Mock, call, patch
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -109,3 +109,50 @@ def test_demo_restart_restores_dataset(monkeypatch, now, payload):
         with TestClient(create_app(clock=lambda: now)) as restarted:
             assert restarted.get("/issues").json() == initial
         assert len(client.get("/issues").json()) == 7
+
+
+@pytest.mark.parametrize("decision", ["confirm", "reject"])
+def test_swem_routing_survives_human_review(monkeypatch, now, no_live_gemini, decision):
+    monkeypatch.setenv("TRIBESIGNAL_DEMO_MODE", "true")
+    app = create_app(clock=lambda: now)
+    with TestClient(app) as client:
+        before = client.get("/issues").json()
+        assert len(before) == 6
+        swem, second, *_ = before
+        expected = {
+            "responsible_team": "Facilities — Elevator Maintenance",
+            "category": "Elevator",
+            "rule": "Category 'Elevator' routes to Facilities — Elevator Maintenance.",
+            "is_fallback": False,
+        }
+        assert swem["routing"] == second["routing"] == expected
+        assert swem["priority"]["score"] == 7.25
+        suggestion, = client.get(f"/issues/{swem['id']}/duplicate-suggestions").json()
+        response = client.post(f"/duplicate-suggestions/{suggestion['id']}/{decision}")
+        assert response.status_code == 200
+        queue = response.json()["issues"]
+        assert client.get("/issues").json() == queue
+        canonical = queue[0]
+        assert canonical["routing"] == expected
+        assert canonical["status"] == swem["status"] == "reported"
+        assert client.get(f"/issues/{swem['id']}").json() == canonical
+        assert client.get(f"/issues/{second['id']}").json()["routing"] == expected
+        if decision == "confirm":
+            assert len(queue) == 5
+            assert second["id"] not in {issue["id"] for issue in queue}
+            assert len(canonical["source_reports"]) == 2
+            assert [report["confirmation_count"] for report in canonical["source_reports"]] == [8, 3]
+            assert canonical["effective_confirmation_count"] == 11
+            assert canonical["priority"]["score"] == 7.44
+            assert queue[1:] == before[2:]
+            raw = app.state.repository.get(UUID(swem["id"]))
+            expected_priority = calculate_priority(raw.model_copy(update={"confirmation_count": 11}), now=now)
+            assert canonical["priority"] == expected_priority.model_dump(mode="json")
+        else:
+            assert len(queue) == 6
+            for original, current in zip(before, queue, strict=True):
+                assert current["routing"] == original["routing"]
+                assert current["priority"] == original["priority"]
+                assert current["source_reports"] == original["source_reports"]
+        assert all("routing" not in report.model_dump() for report in app.state.repository.list())
+    no_live_gemini.assert_not_called()

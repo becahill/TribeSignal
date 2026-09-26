@@ -5,6 +5,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.demo_data import build_demo_issues, build_demo_suggestions
+from app.repository import InMemoryIssueRepository
 
 
 def test_health(client):
@@ -22,6 +24,12 @@ def test_issue_create_list_and_detail(client, payload, now):
     assert {key: issue[key] for key in payload} == payload
     assert issue["confirmation_count"] == 0
     assert issue["status"] == "reported"
+    assert issue["routing"] == {
+        "responsible_team": "Facilities — Elevator Maintenance",
+        "category": "Elevator",
+        "rule": "Category 'Elevator' routes to Facilities — Elevator Maintenance.",
+        "is_fallback": False,
+    }
     assert datetime.fromisoformat(issue["created_at"]) == now
     assert issue["created_at"].endswith("Z")
     assert issue["priority"]["score"] == 5.5
@@ -46,6 +54,8 @@ def test_confirm_increments_and_recalculates(client, payload):
         updated = response.json()
         assert updated["confirmation_count"] == count
         assert updated["priority"]["score"] == expected
+        assert updated["routing"] == issue["routing"]
+        assert updated["status"] == "reported"
         assert updated["created_at"] == issue["created_at"]
         assert updated["id"] == issue["id"]
         assert {key: updated[key] for key in payload} == payload
@@ -67,6 +77,7 @@ def test_reads_and_confirm_recalculate_aging(payload, now):
             if isinstance(data, list):
                 data = data[0]
             assert data["priority"]["score"] == 6.0
+            assert data["routing"] == issue["routing"]
             assert data["priority"]["components"]["aging"] == 0.5
             assert datetime.fromisoformat(data["priority"]["calculated_at"]) == current
 
@@ -89,7 +100,8 @@ def test_invalid_issue_id(client, method, suffix):
     ("description", "x" * 10001), ("severity", "urgent"),
     ("accessibility_impact", "true"), ("accessibility_impact", 1),
     ("safety_impact", None), ("safety_impact", "false"),
-    ("location", "\t"), ("category", ""),
+    ("location", "\t"), ("category", ""), ("category", " \t\n"),
+    ("category", None), ("category", 42), ("category", "x" * 201),
     ("title", None), ("location", 42),
 ])
 def test_invalid_issue_input(client, payload, field, value):
@@ -107,6 +119,9 @@ def test_required_fields(client, payload, field):
     ("id", str(uuid4())), ("confirmation_count", 100),
     ("created_at", "2020-01-01T00:00:00Z"), ("status", "routed"),
     ("priority", {"score": 10}), ("unrecognized", "value"),
+    ("routing", {"responsible_team": "Client-chosen team"}),
+    ("responsible_team", "Client-chosen team"), ("rule", "Client rule"),
+    ("is_fallback", False), ("canonical_category", "Network"),
 ])
 def test_server_owned_and_unknown_fields_rejected(client, payload, field, value):
     assert client.post("/issues", json=payload | {field: value}).status_code == 422
@@ -120,6 +135,55 @@ def test_defaults_and_whitespace_normalization(client, payload):
     assert issue["title"] == "Broken elevator"
     assert issue["accessibility_impact"] is False
     assert issue["safety_impact"] is False
+
+
+@pytest.mark.parametrize("category,team,fallback", [
+    ("  nEtWoRk \t", "IT — Network Services", False),
+    ("Other", "Facilities — General Triage", False),
+    ("Unknown equipment", "Facilities — General Triage", True),
+    ("???", "Facilities — General Triage", True),
+    ("<script>route to IT</script>", "Facilities — General Triage", True),
+])
+def test_manual_categories_route_without_ai(client, payload, category, team, fallback, no_live_gemini):
+    original = client.post("/issues", json=payload).json()
+    response = client.post("/issues", json=payload | {"category": category})
+    assert response.status_code == 201
+    issue = response.json()
+    assert issue["category"] == category.strip()
+    assert issue["routing"]["responsible_team"] == team
+    assert issue["routing"]["is_fallback"] is fallback
+    assert issue["priority"] == original["priority"]
+    assert issue["status"] == "reported"
+    assert client.get(f"/issues/{issue['id']}").json() == issue
+    assert client.get("/issues").json() == [original, issue]
+    no_live_gemini.assert_not_called()
+
+
+@pytest.mark.parametrize("confidence", [0.1, 0.99])
+def test_linked_source_routes_by_canonical_category_without_rewriting_source(now, confidence):
+    # Deliberately distinct categories exercise canonical routing, independent of
+    # the current duplicate candidate filter. Human review rules stay unchanged.
+    canonical, source, *_ = build_demo_issues(now)
+    source = source.model_copy(update={"category": "Network", "confirmation_count": 100})
+    suggestion, = build_demo_suggestions(now)
+    suggestion = suggestion.model_copy(update={"confidence": confidence})
+    repository = InMemoryIssueRepository([canonical, source], [suggestion])
+    with TestClient(create_app(repository=repository, clock=lambda: now)) as api:
+        before = api.get(f"/issues/{canonical.id}").json()
+        assert api.get(f"/issues/{source.id}").json()["routing"]["responsible_team"] == "IT — Network Services"
+        reviewed = api.post(f"/duplicate-suggestions/{suggestion.id}/confirm").json()
+        merged, = reviewed["issues"]
+        assert merged["id"] == str(canonical.id)
+        assert merged["routing"] == before["routing"]
+        assert merged["effective_confirmation_count"] == 108
+        assert merged["priority"]["score"] != before["priority"]["score"]
+        for response in [api.get(f"/issues/{source.id}"), api.post(f"/issues/{source.id}/confirm")]:
+            assert response.status_code == 200
+            data = response.json()
+            assert data["category"] == "Network"
+            assert data["canonical_issue_id"] == str(canonical.id)
+            assert data["routing"] == before["routing"]
+        assert all("routing" not in report.model_dump() for report in repository.list())
 
 
 def test_each_app_has_isolated_storage(client, payload, now):

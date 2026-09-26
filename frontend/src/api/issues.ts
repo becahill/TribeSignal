@@ -4,6 +4,7 @@ import {
   type AnalysisResponse,
   type Issue,
   type IssueCreate,
+  type RoutingDecision,
   type SourceReport,
   type DuplicateSuggestion,
   type DuplicateAnalysisResponse,
@@ -56,9 +57,14 @@ function isSourceReport(value: unknown): value is SourceReport {
     timestamp(value.created_at);
 }
 
+function isRoutingDecision(value: unknown): value is RoutingDecision {
+  return record(value) && text(value.responsible_team) && text(value.category) &&
+    text(value.rule) && typeof value.is_fallback === 'boolean';
+}
+
 function isIssue(value: unknown): value is Issue {
   if (!record(value) || !isSourceReport(value) || !record(value.priority) ||
-      !record(value.priority.components)) return false;
+      !record(value.priority.components) || !isRoutingDecision(value.routing)) return false;
   const priority = value.priority;
   const components = value.priority.components;
   return uuid(value.canonical_issue_id) && count(value.effective_confirmation_count) &&

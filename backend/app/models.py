@@ -15,6 +15,8 @@ from pydantic import (
     field_validator,
 )
 
+from .routing import RoutingDecision
+
 
 class Severity(str, Enum):
     LOW = "low"
@@ -82,12 +84,14 @@ class IssueSnapshot(BaseModel):
     model_config = ConfigDict(frozen=True)
     issue: Issue
     canonical_issue_id: UUID
+    canonical_category: ShortText
     source_reports: list[Issue]
     pending_duplicate_count: int
 
 
 class IssueResponse(Issue):
     priority: Priority
+    routing: RoutingDecision
     canonical_issue_id: UUID
     effective_confirmation_count: Annotated[int, Field(strict=True, ge=0)]
     source_reports: list[Issue]

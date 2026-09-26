@@ -110,6 +110,7 @@ class InMemoryIssueRepository:
         )
         return IssueSnapshot(
             issue=self._issues[issue_id], canonical_issue_id=root,
+            canonical_category=self._issues[root].category,
             source_reports=sorted(sources, key=lambda issue: (issue.created_at, issue.id.int)),
             pending_duplicate_count=sum(s.status == "pending" for s in self._relevant(issue_id)),
         )

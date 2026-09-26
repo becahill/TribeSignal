@@ -1,14 +1,14 @@
 # TribeSignal
-An AI-assisted triage layer for campus infrastructure issues, with optional report organization and transparent deterministic prioritization.
+An AI-assisted triage layer for campus infrastructure issues, with optional report organization, human-reviewed duplicates, and transparent deterministic priority and routing.
 
 TribeSignal sits between community intake and operational teams/systems such as
 TMA/FAMIS. It is a transparent triage layer, not a replacement work-order system.
-AI never determines, adjusts, ranks, or overrides priority.
+AI never determines, adjusts, ranks, or overrides priority or chooses routing.
 
 ## Backend development
 
 The backend provides issue intake, retrieval, confirmations, optional Gemini
-analysis, and an auditable deterministic priority calculation. Python 3.11+ is required.
+analysis, and auditable deterministic priority and routing. Python 3.11+ is required.
 
 From the repository root:
 
@@ -27,7 +27,7 @@ backend/.venv/bin/python -m pytest -c backend/pyproject.toml backend/tests
 ```
 
 The modules under `backend/app/` separate validated data (`models.py`), the sole
-priority implementation (`priority.py`), storage (`repository.py`), and the HTTP
+priority implementation (`priority.py`), category-to-team rules (`routing.py`), storage (`repository.py`), and the HTTP
 API (`main.py`). `create_app` accepts an injected repository, clock, and
 `IssueAnalyzer` / `DuplicateAnalyzer` for tests. `ai.py` owns the Gemini adapter and analysis service;
 `analysis_models.py` defines the proposal-only contract and `safety.py` the
@@ -177,12 +177,15 @@ To demonstrate the seeded Swem case:
    using the commands below. No Gemini key is needed.
 2. Open **Possible duplicate** on **Swem Library elevator unavailable**. Inspect
    the second Swem report, explanation, similarity label, and demo-fixture label.
+   The card already shows **Routes to: Facilities — Elevator Maintenance**.
 3. Choose **Confirm same issue**. The queue goes from six to five items. The older
    Swem issue now shows **2 community reports**, **11 confirmations** (8 + 3), and
    **Duplicate reviewed by human**. At startup ages, priority rises from about
    **7.25 to 7.44**, solely through the deterministic confirmation term.
 4. Expand **View original reports & review history** and **Why this priority?**
    to inspect both source counts, original text, review timestamp, and priority factors.
+   One operational card remains for Swem, still showing **Routes to:
+   Facilities — Elevator Maintenance**, with the Elevator category rule visible.
 5. Restart the demo backend to reset, then choose **Keep separate**. Both Swem
    issues remain, their counts/priorities are unchanged, and the pending badge disappears.
 
@@ -193,7 +196,7 @@ API methods without new test dependencies.
 ## Frontend development
 
 The React/TypeScript frontend provides issue reporting, a queue sorted by the
-backend's priority scores, expandable priority explanations, and confirmations.
+backend's priority scores, expandable priority explanations, routing destinations and rules, and confirmations.
 It is a triage workspace, not a replacement work-order system. No downstream
 handoff functionality is connected.
 
@@ -240,8 +243,8 @@ the in-memory backend restarts.
 
 API calls and response validation live in `frontend/src/api/issues.ts`; the
 backend contract is mirrored in `frontend/src/types/issue.ts`. React components
-only display returned components, scores, and explanations. There is no frontend
-priority formula. Failed refreshes retain the last loaded queue; failed report
+only display returned components, scores, destinations, and explanations. There is no frontend
+priority formula or category-to-team mapping. Failed refreshes retain the last loaded queue; failed report
 submissions retain form input. A network failure during a write can leave its
 outcome uncertain: check the queue before retrying to avoid duplicate reports or
 confirmations. The client does not automatically retry writes.
@@ -251,15 +254,15 @@ confirmations. The client does not automatically retry writes.
 | Endpoint | Result |
 | --- | --- |
 | `GET /health` | `200`, `{"status": "ok"}` |
-| `POST /issues` | `201`, newly created issue with priority |
+| `POST /issues` | `201`, newly created issue with priority and routing |
 | `POST /issues/analyze` | `200`, editable proposal or emergency stop; `503`, assistance unavailable |
-| `GET /issues` | `200`, canonical operational issues in creation order with current priorities |
-| `GET /issues/{issue_id}` | `200`, issue with current priority |
-| `POST /issues/{issue_id}/confirm` | `200`, updated issue with current priority; no body required |
+| `GET /issues` | `200`, canonical operational issues in creation order with current priorities and routing |
+| `GET /issues/{issue_id}` | `200`, issue with current priority and canonical routing destination |
+| `POST /issues/{issue_id}/confirm` | `200`, updated issue with current priority and routing; no body required |
 | `GET /issues/{issue_id}/duplicate-suggestions` | `200`, relevant suggestions with both source reports and review history; never calls Gemini |
 | `POST /issues/{issue_id}/duplicate-suggestions/analyze` | `200`, `complete` or `unavailable`, suggestions, and `remaining_candidates`; no body required |
-| `POST /duplicate-suggestions/{suggestion_id}/confirm` | `200`, human-reviewed suggestion and refreshed canonical queue |
-| `POST /duplicate-suggestions/{suggestion_id}/reject` | `200`, human-reviewed suggestion and unchanged independent queue |
+| `POST /duplicate-suggestions/{suggestion_id}/confirm` | `200`, human-reviewed suggestion and refreshed canonical queue with routing |
+| `POST /duplicate-suggestions/{suggestion_id}/reject` | `200`, human-reviewed suggestion and unchanged independent queue with routing |
 
 Unknown UUIDs return `404`; invalid UUIDs or request bodies return `422`.
 Duplicate review accepts no body or `{}`; extra fields are rejected. A repeated,
@@ -314,6 +317,62 @@ The canonical queue omits associated sources, but their original IDs remain
 readable through `GET /issues/{issue_id}` and their full reports remain visible
 under the canonical card. Searching the queue includes associated source text.
 
+Every issue response also includes backend-computed `routing`:
+
+```json
+{
+  "responsible_team": "Facilities — Elevator Maintenance",
+  "category": "Elevator",
+  "rule": "Category 'Elevator' routes to Facilities — Elevator Maintenance.",
+  "is_fallback": false
+}
+```
+
+Routing is derived on response construction and is never stored on reports or
+accepted in intake. Client-supplied `routing` or team fields return `422` through
+the existing extra-field rejection. Source report snapshots retain their raw fields;
+linked-source detail and confirmation responses expose the canonical destination
+in `routing` while preserving the source's original category and individual priority.
+
+## Deterministic routing
+
+```text
+category → deterministic routing rule → responsible operational team
+```
+
+Routing is backend-owned: `backend/app/routing.py` is the single authoritative
+mapping. Matching trims outer whitespace and ignores case; it never uses fuzzy
+matching, embeddings, confidence scores, or AI. AI does not choose routing.
+Gemini may propose a category during intake, but a human reviews it before submission;
+the final category is the only routing input.
+
+| Category | Responsible operational team |
+| --- | --- |
+| Elevator | Facilities — Elevator Maintenance |
+| Electrical | Facilities — Electrical |
+| Plumbing | Facilities — Plumbing |
+| Walkway | Facilities — Grounds |
+| Lighting | Facilities — Electrical |
+| Network | IT — Network Services |
+| Other | Facilities — General Triage |
+| Unknown category | Facilities — General Triage (fallback) |
+
+Known matches return the standard category label. Unknown free-text categories
+preserve their trimmed text as the routing basis, set `is_fallback: true`, and
+explain the General Triage fallback on the card. `Other` is an explicit supported
+rule, not a fallback. Empty/whitespace-only categories remain invalid (`422`),
+as do non-text categories and categories longer than 200 characters.
+
+Canonical issues have one routing destination based on the canonical category.
+Duplicate confidence, source counts, severity, aging, and priority never enter
+routing. Human-reviewed associations preserve source reports and remove linked
+sources from the operational queue. Priority and routing remain independent.
+
+**Routes to** exposes a destination; it does not mean an external handoff was
+performed, Facilities accepted the issue, or a work order was created. Routing
+does not change lifecycle status. TMA/FAMIS integration is intentionally outside
+this hackathon slice.
+
 ## Deterministic priority
 
 `P = min(10, severity + accessibility + safety + confirmations + aging)`
@@ -351,5 +410,5 @@ CORS allows `localhost` and `127.0.0.1` on ports 3000 and 5173 by default. Overr
 with the comma-separated `TRIBESIGNAL_CORS_ORIGINS` environment variable. No
 credentialed cross-origin requests are enabled.
 
-This slice does not implement routing actions, authentication,
+This slice does not implement dispatch, work-order creation, authentication,
 notifications, downstream integrations, maps, analytics dashboards, or a production database.

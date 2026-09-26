@@ -23,6 +23,8 @@ const suggestion = {
 const issue = {
   ...source, canonical_issue_id: source.id, effective_confirmation_count: 11,
   source_reports: [source, candidate], pending_duplicate_count: 0,
+  routing: { responsible_team: 'Facilities — Elevator Maintenance', category: 'Elevator',
+    rule: "Category 'Elevator' routes to Facilities — Elevator Maintenance.", is_fallback: false },
   priority: { score: 7.44, components: { severity: 4, accessibility: 1.5, safety: 0, confirmations: 1.4387, aging: 0.5 },
     explanation: 'Backend calculation', calculated_at: '2026-09-26T12:00:00Z' },
 };
@@ -32,6 +34,34 @@ const rejected = { ...confirmed, status: 'rejected', canonical_issue_id: null };
 const result = { suggestion: confirmed, issues: [issue] };
 
 // Native Node tests exercise the actual runtime parser without new test dependencies.
+test('accepts backend routing and fallback decisions without choosing a team', () => {
+  assert.deepEqual(parseIssue(issue).routing, issue.routing);
+  const routing = { responsible_team: 'Facilities — General Triage', category: 'Unknown equipment',
+    rule: 'Unrecognized category routes to Facilities — General Triage (fallback).', is_fallback: true };
+  assert.deepEqual(parseIssue({ ...issue, routing }).routing, routing);
+  // Validation checks the shape; only the backend owns category-to-team rules.
+  const backendDecision = { ...routing, responsible_team: 'Backend-provided team' };
+  assert.deepEqual(parseIssue({ ...issue, routing: backendDecision }).routing, backendDecision);
+});
+
+test('rejects missing or malformed routing on issues, queues, and review responses', () => {
+  const invalid = [undefined, null, [], {}, ...Object.keys(issue.routing).map((key) => {
+    const routing = { ...issue.routing };
+    delete routing[key];
+    return routing;
+  })];
+  for (const key of ['responsible_team', 'category', 'rule']) {
+    for (const value of ['', ' \t', null, 42, {}, []]) invalid.push({ ...issue.routing, [key]: value });
+  }
+  for (const value of ['false', 0, 1, null]) invalid.push({ ...issue.routing, is_fallback: value });
+  for (const routing of invalid) {
+    const malformed = { ...issue, routing };
+    assert.throws(() => parseIssue(malformed), ApiError);
+    assert.throws(() => parseQueue([malformed]), ApiError);
+    assert.throws(() => parseDuplicateReview({ ...result, issues: [malformed] }), ApiError);
+  }
+});
+
 test('accepts valid pending, confirmed, rejected, and canonical responses', () => {
   for (const item of [suggestion, confirmed, rejected]) assert.deepEqual(parseDuplicateSuggestion(item), item);
   assert.deepEqual(parseDuplicateSuggestions([suggestion]), [suggestion]);
