@@ -32,6 +32,61 @@ priority implementation (`priority.py`), storage (`repository.py`), and the HTTP
 API (`main.py`). `create_app` accepts an injected repository and clock for tests.
 No frontend priority calculation is needed.
 
+## Frontend development
+
+The React/TypeScript frontend provides issue reporting, a queue sorted by the
+backend's priority scores, expandable priority explanations, and confirmations.
+It is a triage workspace, not a replacement work-order system. No downstream
+handoff functionality is connected.
+
+With Node.js 22.12+ and npm installed, run in a second terminal from the repository
+root (leave the backend command above running):
+
+```sh
+cd frontend
+npm ci
+npm run dev
+```
+
+Open <http://127.0.0.1:5173>. The frontend calls <http://localhost:8000> directly;
+the backend already allows this frontend origin through its development CORS
+configuration. Vite uses port 5173 strictly so a port conflict cannot silently
+move the app to an origin the backend does not allow.
+
+To use another backend URL, copy `frontend/.env.example` to `frontend/.env.local`,
+set `VITE_API_BASE_URL`, and restart Vite. Only public configuration belongs in
+Vite environment variables. If changing the frontend port/origin, update the
+backend's `TRIBESIGNAL_CORS_ORIGINS` too.
+
+Frontend checks (from `frontend/`):
+
+```sh
+npm run typecheck
+npm run build
+npm run preview
+```
+
+Preview serves the production build at <http://127.0.0.1:5173> and requires the
+backend to be running. Stop the development server before starting preview.
+Fonts are bundled locally; no external font service is needed.
+
+For a quick demo, start with the empty queue, submit a high-severity elevator
+report with accessibility impact, then expand **Why this priority?**. Confirm it
+three times to see the backend score reach approximately 6.16 (aging may add more
+over time). Each confirmation refreshes the displayed issue from the response.
+Repeated confirmations remain possible because identity/deduplication is not
+part of this slice. Use **Refresh queue** to fetch current aging and reports from
+other browser sessions; there is no background polling. Reports are lost when
+the in-memory backend restarts.
+
+API calls and response validation live in `frontend/src/api/issues.ts`; the
+backend contract is mirrored in `frontend/src/types/issue.ts`. React components
+only display returned components, scores, and explanations. There is no frontend
+priority formula. Failed refreshes retain the last loaded queue; failed report
+submissions retain form input. A network failure during a write can leave its
+outcome uncertain: check the queue before retrying to avoid duplicate reports or
+confirmations. The client does not automatically retry writes.
+
 ## API contract
 
 | Endpoint | Result |
@@ -110,4 +165,4 @@ with the comma-separated `TRIBESIGNAL_CORS_ORIGINS` environment variable. No
 credentialed cross-origin requests are enabled.
 
 This slice does not implement routing actions, deduplication, AI, authentication,
-notifications, downstream integrations, maps, dashboards, or a production database.
+notifications, downstream integrations, maps, analytics dashboards, or a production database.
