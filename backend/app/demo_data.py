@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from .models import Issue, Severity
+from .duplicate_models import DuplicateSuggestion
 
 
 def build_demo_issues(now: datetime) -> list[Issue]:
@@ -27,7 +28,7 @@ def build_demo_issues(now: datetime) -> list[Issue]:
             confirmation_count=8,
             created_at=now - timedelta(hours=36),
         ),
-        # Keep this similar report separate for a later duplicate-detection pass.
+        # Independent until a human reviews the seeded duplicate suggestion.
         Issue(
             id=UUID("2f4bde9a-18c6-4bb1-8f87-6f9400000002"),
             title="Elevator near Swem first floor not responding",
@@ -104,3 +105,19 @@ def build_demo_issues(now: datetime) -> list[Issue]:
             created_at=now - timedelta(hours=48),
         ),
     ]
+
+
+def build_demo_suggestions(now: datetime) -> list[DuplicateSuggestion]:
+    """Explicit fixture evidence: no live model or production matching shortcut."""
+    reports = build_demo_issues(now)
+    return [DuplicateSuggestion(
+        id=UUID("8ff68d26-41d1-4b30-9597-6f9400000001"),
+        issue_id=reports[0].id,
+        candidate_issue_id=reports[1].id,
+        confidence=0.93,
+        reason=("Both reports describe an elevator at Swem Library failing to respond "
+                "to calls and preventing access to upper floors. The location and "
+                "reported failure suggest the same outage, though the asset is not explicitly identified."),
+        origin="demo_fixture",
+        created_at=now,
+    )]

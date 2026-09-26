@@ -29,7 +29,7 @@ backend/.venv/bin/python -m pytest -c backend/pyproject.toml backend/tests
 The modules under `backend/app/` separate validated data (`models.py`), the sole
 priority implementation (`priority.py`), storage (`repository.py`), and the HTTP
 API (`main.py`). `create_app` accepts an injected repository, clock, and
-`IssueAnalyzer` for tests. `ai.py` owns the Gemini adapter and analysis service;
+`IssueAnalyzer` / `DuplicateAnalyzer` for tests. `ai.py` owns the Gemini adapter and analysis service;
 `analysis_models.py` defines the proposal-only contract and `safety.py` the
 deterministic emergency check. Tests use fake analyzers and mocked SDK clients,
 never live Gemini calls.
@@ -102,13 +102,93 @@ backend/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
 
 This loads six fictional William & Mary campus reports with stable IDs, including
-two intentionally similar Swem elevator reports. Priorities are calculated live
+two intentionally similar Swem elevator reports and a pending duplicate suggestion
+explicitly marked `demo_fixture`. The suggestion can be reviewed without a Gemini key. Priorities are calculated live
 by the existing deterministic engine; the seed data contains no priority scores.
 Restarting or reloading in demo mode restores the known dataset, with report ages
 relative to startup. Changes made during a session are not persisted. The flag
 also accepts `1`, `yes`, and `on` (case-insensitive). Running without the variable
 preserves the empty in-memory behavior. Explicitly injected repositories are
 always used as supplied, regardless of the flag.
+
+## Human-reviewed semantic duplicate detection
+
+```text
+deterministic candidate filter
+→ Gemini semantic comparison
+→ human review
+→ canonical issue association
+→ deterministic priority recalculation
+```
+
+**AI proposes; humans confirm.** Open an issue's duplicate section and select
+**Check for possible duplicates** for a live comparison. Candidate retrieval
+requires an exact category and location match after case/whitespace normalization,
+and creation times within 72 hours. It does not resolve aliases or ambiguous
+locations. Each explicit check compares at most three previously unassessed pairs,
+traversed by creation time and UUID; use the button again for remaining candidates.
+Successful negative comparisons and existing suggestions are reused, including
+rejected suggestions. Failed comparisons remain retryable. Queue reads, intake,
+community confirmations, and review never trigger model calls.
+
+`duplicates.py` owns the separately injectable Gemini comparison boundary;
+`duplicate_models.py` defines its constrained schema. Gemini receives only the two
+reports' title, description, location, category, and creation time. It returns
+`is_possible_duplicate`, semantic-match `confidence`, and a factual `reason`.
+The system instruction treats report text as untrusted data, preserves uncertainty,
+forbids invented locations, and prohibits priority, severity, urgency, ranking,
+routing, or action judgments. The backend revalidates JSON and injected analyzers,
+rejects extra fields and invalid values, and conservatively rejects consequential
+language in the reason. Prose is never executed or interpreted as a decision.
+Keys stay backend-only, requests use the existing 15-second timeout with no retries,
+and raw provider exceptions are never returned or logged. The browser allows up
+to 50 seconds for a batch of three. Gemini failure does not break core reporting;
+analysis returns `unavailable`, keeps any existing evidence, and never associates reports.
+
+The card shows **Possible duplicate**, both original reports and timestamps,
+semantic similarity wording (not a calibrated probability), and the explicit
+message **“AI suggested this relationship. A person must review it.”** Only a
+person's **Confirm same issue** or **Keep separate** action records a decision.
+Review history stores the decision, timestamp, and `reviewed_by: human`. No identity
+system is implemented, so this records an explicit review action, not an authenticated
+reviewer's identity.
+
+Confirmation associates sources under the earliest `created_at`, with the lowest
+UUID as a deterministic tie-break. The choice is independent of AI. Both original
+titles, descriptions, timestamps, raw counts, severities, and impact flags remain
+preserved. Only one canonical operational issue remains in the queue; its card
+shows the associated report count and expandable originals and review history.
+Rejection keeps both reports independent and does not change counts or priority.
+Later associations that would contradict a keep-separate decision return a conflict.
+
+**AI confidence never affects priority.** The canonical report retains its own
+severity and impact flags. Its effective community signal is the sum of raw
+confirmation counts for distinct associated source IDs. That count is passed to
+`priority.py`, whose formula is unchanged; no aggregate is written back to a source.
+This prevents double-counting on repeated or overlapping association requests.
+A subsequent community confirmation increments only the addressed source and is
+reflected in the next canonical total. Reviews and source increments share the
+repository lock; model calls run outside it. Without voter identity, confirmations
+from the same person on different source reports cannot be deduplicated.
+
+To demonstrate the seeded Swem case:
+
+1. Start the backend in demo mode using the command above, then start the frontend
+   using the commands below. No Gemini key is needed.
+2. Open **Possible duplicate** on **Swem Library elevator unavailable**. Inspect
+   the second Swem report, explanation, similarity label, and demo-fixture label.
+3. Choose **Confirm same issue**. The queue goes from six to five items. The older
+   Swem issue now shows **2 community reports**, **11 confirmations** (8 + 3), and
+   **Duplicate reviewed by human**. At startup ages, priority rises from about
+   **7.25 to 7.44**, solely through the deterministic confirmation term.
+4. Expand **View original reports & review history** and **Why this priority?**
+   to inspect both source counts, original text, review timestamp, and priority factors.
+5. Restart the demo backend to reset, then choose **Keep separate**. Both Swem
+   issues remain, their counts/priorities are unchanged, and the pending badge disappears.
+
+Backend tests block all live SDK clients; adapter tests mock Gemini. `npm test`
+uses Node's built-in runner to verify the actual TypeScript runtime validators and
+API methods without new test dependencies.
 
 ## Frontend development
 
@@ -139,6 +219,7 @@ backend's `TRIBESIGNAL_CORS_ORIGINS` too.
 Frontend checks (from `frontend/`):
 
 ```sh
+npm test
 npm run typecheck
 npm run build
 npm run preview
@@ -152,8 +233,8 @@ For a quick demo, start with the empty queue, submit a high-severity elevator
 report with accessibility impact, then expand **Why this priority?**. Confirm it
 three times to see the backend score reach approximately 6.16 (aging may add more
 over time). Each confirmation refreshes the displayed issue from the response.
-Repeated confirmations remain possible because identity/deduplication is not
-part of this slice. Use **Refresh queue** to fetch current aging and reports from
+Repeated community confirmations remain possible because voter identity is not
+tracked. Human duplicate review associates reports; it does not deduplicate people. Use **Refresh queue** to fetch current aging and reports from
 other browser sessions; there is no background polling. Reports are lost when
 the in-memory backend restarts.
 
@@ -172,11 +253,18 @@ confirmations. The client does not automatically retry writes.
 | `GET /health` | `200`, `{"status": "ok"}` |
 | `POST /issues` | `201`, newly created issue with priority |
 | `POST /issues/analyze` | `200`, editable proposal or emergency stop; `503`, assistance unavailable |
-| `GET /issues` | `200`, array of issues in creation order with current priorities |
+| `GET /issues` | `200`, canonical operational issues in creation order with current priorities |
 | `GET /issues/{issue_id}` | `200`, issue with current priority |
 | `POST /issues/{issue_id}/confirm` | `200`, updated issue with current priority; no body required |
+| `GET /issues/{issue_id}/duplicate-suggestions` | `200`, relevant suggestions with both source reports and review history; never calls Gemini |
+| `POST /issues/{issue_id}/duplicate-suggestions/analyze` | `200`, `complete` or `unavailable`, suggestions, and `remaining_candidates`; no body required |
+| `POST /duplicate-suggestions/{suggestion_id}/confirm` | `200`, human-reviewed suggestion and refreshed canonical queue |
+| `POST /duplicate-suggestions/{suggestion_id}/reject` | `200`, human-reviewed suggestion and unchanged independent queue |
 
 Unknown UUIDs return `404`; invalid UUIDs or request bodies return `422`.
+Duplicate review accepts no body or `{}`; extra fields are rejected. A repeated,
+opposing, already-associated, or contradictory review returns `409` without
+changing state. Clients never automatically retry writes.
 
 Analysis accepts exactly `{"text": "..."}`: whitespace is trimmed, content must
 be nonempty, and the limit is 10,000 characters. Responses are discriminated by
@@ -216,6 +304,15 @@ The server assigns a UUID, UTC-aware `created_at`, status `reported`, and zero
 confirmations. Each issue response includes all issue fields plus `priority`
 with `score`, `components`, `explanation`, and UTC `calculated_at`. Priority is
 recomputed on every read and confirmation so aging does not become stale.
+`confirmation_count` remains the raw source count. `effective_confirmation_count`
+is the sum of distinct `source_reports` in that response and is the count used for
+its priority. Canonical responses contain all associated sources; linked-source
+detail responses retain their own raw fields, count, and individual priority.
+`canonical_issue_id` points to the current operational issue (self for an
+independent/canonical report); `pending_duplicate_count` drives the review badge.
+The canonical queue omits associated sources, but their original IDs remain
+readable through `GET /issues/{issue_id}` and their full reports remain visible
+under the canonical card. Searching the queue includes associated source text.
 
 ## Deterministic priority
 
@@ -254,5 +351,5 @@ CORS allows `localhost` and `127.0.0.1` on ports 3000 and 5173 by default. Overr
 with the comma-separated `TRIBESIGNAL_CORS_ORIGINS` environment variable. No
 credentialed cross-origin requests are enabled.
 
-This slice does not implement routing actions, deduplication, authentication,
+This slice does not implement routing actions, authentication,
 notifications, downstream integrations, maps, analytics dashboards, or a production database.

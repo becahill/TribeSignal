@@ -18,7 +18,7 @@ import {
 import { issuesApi } from './api/issues';
 import { IssueCard } from './components/IssueCard';
 import { ReportDialog } from './components/ReportDialog';
-import type { Issue } from './types/issue';
+import type { DuplicateReviewResponse, Issue } from './types/issue';
 
 export default function App() {
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -30,6 +30,8 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [newIssueId, setNewIssueId] = useState<string | null>(null);
   const [createdMessage, setCreatedMessage] = useState('');
+  const [mutationPending, setMutationPending] = useState(false);
+  const mutationInFlight = useRef(false);
   const activeLoad = useRef<AbortController | null>(null);
 
   const loadQueue = useCallback(async () => {
@@ -69,6 +71,41 @@ export default function App() {
     ]);
   }
 
+  async function withMutation<T,>(action: () => Promise<T>): Promise<T> {
+    if (mutationInFlight.current) throw new Error('Please wait for the current review or confirmation.');
+    mutationInFlight.current = true;
+    setMutationPending(true);
+    activeLoad.current?.abort();
+    setLoading(false);
+    try { return await action(); }
+    finally { mutationInFlight.current = false; setMutationPending(false); }
+  }
+
+  async function confirmIssue(id: string): Promise<Issue> {
+    return withMutation(async () => {
+      const updated = await issuesApi.confirm(id);
+      if (updated.canonical_issue_id === updated.id) updateIssue(updated);
+      else await loadQueue(); // Another browser may have associated this source.
+      return updated;
+    });
+  }
+
+  async function reviewDuplicate(id: string, decision: 'confirm' | 'reject'): Promise<DuplicateReviewResponse> {
+    return withMutation(async () => {
+      const result = await issuesApi.reviewDuplicate(id, decision);
+      activeLoad.current?.abort();
+      setLoading(false);
+      setIssues(result.issues);
+      setLastLoaded(new Date());
+      setCreatedMessage(decision === 'confirm'
+        ? 'Duplicate reviewed by human. Both original reports are preserved under one canonical issue.'
+        : 'Reports kept separate by human review. Both remain in the queue.');
+      const focusId = result.suggestion.canonical_issue_id ?? result.suggestion.issue_id;
+      window.requestAnimationFrame(() => document.getElementById(`title-${focusId}`)?.focus());
+      return result;
+    });
+  }
+
   function issueCreated(issue: Issue) {
     updateIssue(issue);
     setReportOpen(false);
@@ -86,7 +123,8 @@ export default function App() {
     .filter(
       (issue) =>
         !search ||
-        [issue.title, issue.description, issue.location, issue.category].some(
+        [issue.title, issue.description, issue.location, issue.category,
+          ...issue.source_reports.flatMap((source) => [source.title, source.description, source.location])].some(
           (value) => value.toLocaleLowerCase().includes(search),
         ),
     )
@@ -343,7 +381,10 @@ export default function App() {
                       key={issue.id}
                       issue={issue}
                       isNew={newIssueId === issue.id}
-                      onUpdated={updateIssue}
+                      busy={mutationPending}
+                      onConfirm={confirmIssue}
+                      onReview={reviewDuplicate}
+                      onRefresh={() => void loadQueue()}
                     />
                   ))}
                 </ol>

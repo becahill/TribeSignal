@@ -9,17 +9,21 @@ import {
   Plus,
   Users,
 } from 'lucide-react';
-import { issuesApi } from '../api/issues';
+import { DuplicateReview } from './DuplicateReview';
+import type { DuplicateReviewResponse } from '../types/issue';
 import { severityLabels, statusLabels, type Issue } from '../types/issue';
 import { PriorityBreakdown } from './PriorityBreakdown';
 
 interface Props {
   issue: Issue;
   isNew: boolean;
-  onUpdated: (issue: Issue) => void;
+  busy: boolean;
+  onConfirm: (id: string) => Promise<Issue>;
+  onReview: (id: string, decision: 'confirm' | 'reject') => Promise<DuplicateReviewResponse>;
+  onRefresh: () => void;
 }
 
-export function IssueCard({ issue, isNew, onUpdated }: Props) {
+export function IssueCard({ issue, isNew, busy, onConfirm, onReview, onRefresh }: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -32,8 +36,7 @@ export function IssueCard({ issue, isNew, onUpdated }: Props) {
     setError('');
     setSuccess('');
     try {
-      const updated = await issuesApi.confirm(issue.id);
-      onUpdated(updated);
+      const updated = await onConfirm(issue.id);
       setSuccess(
         `Confirmation recorded. Priority is now ${updated.priority.score.toFixed(2)} / 10.`,
       );
@@ -108,8 +111,8 @@ export function IssueCard({ issue, isNew, onUpdated }: Props) {
           <div className="issue-footer-meta">
             <span>
               <Users size={15} />
-              <strong>{issue.confirmation_count}</strong>{' '}
-              {issue.confirmation_count === 1
+              <strong>{issue.effective_confirmation_count}</strong>{' '}
+              {issue.effective_confirmation_count === 1
                 ? 'confirmation'
                 : 'confirmations'}
             </span>
@@ -129,7 +132,7 @@ export function IssueCard({ issue, isNew, onUpdated }: Props) {
           <button
             className="button button-confirm"
             onClick={confirm}
-            disabled={pending}
+            disabled={pending || busy}
             aria-label={`I'm seeing this too: ${issue.title}`}
           >
             {pending ? (
@@ -150,6 +153,7 @@ export function IssueCard({ issue, isNew, onUpdated }: Props) {
         <div className="confirmation-status" role="status">
           {success && <p className="card-message success-message">{success}</p>}
         </div>
+        <DuplicateReview issue={issue} busy={busy} onReview={onReview} onRefresh={onRefresh} />
         <PriorityBreakdown
           priority={issue.priority}
           description={issue.description}

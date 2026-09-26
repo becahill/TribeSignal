@@ -76,5 +76,19 @@ class Priority(BaseModel):
     calculated_at: AwareDatetime
 
 
+class IssueSnapshot(BaseModel):
+    """One lock-consistent view; source counts are never overwritten by aggregates."""
+
+    model_config = ConfigDict(frozen=True)
+    issue: Issue
+    canonical_issue_id: UUID
+    source_reports: list[Issue]
+    pending_duplicate_count: int
+
+
 class IssueResponse(Issue):
     priority: Priority
+    canonical_issue_id: UUID
+    effective_confirmation_count: Annotated[int, Field(strict=True, ge=0)]
+    source_reports: list[Issue]
+    pending_duplicate_count: Annotated[int, Field(strict=True, ge=0)]

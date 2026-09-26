@@ -51,12 +51,46 @@ export interface Priority {
   calculated_at: string;
 }
 
-export interface Issue extends IssueCreate {
+export interface SourceReport extends IssueCreate {
   id: string;
   confirmation_count: number;
   created_at: string;
   status: IssueStatus;
+}
+
+export interface Issue extends SourceReport {
   priority: Priority;
+  canonical_issue_id: string;
+  effective_confirmation_count: number;
+  source_reports: SourceReport[];
+  pending_duplicate_count: number;
+}
+
+export interface DuplicateSuggestion {
+  id: string;
+  issue_id: string;
+  candidate_issue_id: string;
+  confidence: number;
+  reason: string;
+  status: 'pending' | 'confirmed' | 'rejected';
+  origin: 'gemini' | 'demo_fixture';
+  created_at: string;
+  reviewed_at: string | null;
+  reviewed_by: 'human' | null;
+  canonical_issue_id: string | null;
+  issue: SourceReport;
+  candidate: SourceReport;
+}
+
+export interface DuplicateAnalysisResponse {
+  status: 'complete' | 'unavailable';
+  suggestions: DuplicateSuggestion[];
+  remaining_candidates: number;
+}
+
+export interface DuplicateReviewResponse {
+  suggestion: DuplicateSuggestion;
+  issues: Issue[];
 }
 
 export const severityLabels: Record<Severity, string> = {

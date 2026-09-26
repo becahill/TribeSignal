@@ -30,15 +30,6 @@ FORBIDDEN_FIELDS = {
 }
 
 
-@pytest.fixture(autouse=True)
-def no_live_gemini(monkeypatch):
-    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
-    factory = MagicMock(side_effect=AssertionError("Live Gemini client forbidden in tests"))
-    monkeypatch.setattr("app.ai.genai.Client", factory)
-    return factory
-
-
 class FakeAnalyzer:
     def __init__(self, result=None, error=None):
         self.result = AnalysisProposal(**PROPOSAL) if result is None else result

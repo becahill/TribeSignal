@@ -12,10 +12,15 @@ from fastapi.responses import JSONResponse
 
 from .ai import GeminiIssueAnalyzer, IssueAnalyzer, analyze_report
 from .analysis_models import AnalysisRequest, AnalysisResponse, AnalysisUnavailable
-from .demo_data import build_demo_issues
-from .models import Issue, IssueCreate, IssueResponse
+from .demo_data import build_demo_issues, build_demo_suggestions
+from .duplicate_models import (
+    DuplicateAnalysisResponse, DuplicateReviewRequest, DuplicateReviewResponse,
+    DuplicateSuggestionResponse,
+)
+from .duplicates import DuplicateAnalyzer, GeminiDuplicateAnalyzer, analyze_duplicates
+from .models import Issue, IssueCreate, IssueResponse, IssueSnapshot
 from .priority import calculate_priority
-from .repository import InMemoryIssueRepository, IssueRepository
+from .repository import InMemoryIssueRepository, IssueRepository, ReviewConflict
 
 
 Clock = Callable[[], datetime]
@@ -39,6 +44,10 @@ def get_analyzer(request: Request) -> IssueAnalyzer:
     return request.app.state.analyzer
 
 
+def get_duplicate_analyzer(request: Request) -> DuplicateAnalyzer:
+    return request.app.state.duplicate_analyzer
+
+
 def get_now(request: Request) -> datetime:
     now = request.app.state.clock()
     if now.tzinfo is None or now.utcoffset() is None:
@@ -48,13 +57,27 @@ def get_now(request: Request) -> datetime:
 
 RepositoryDependency = Annotated[IssueRepository, Depends(get_repository)]
 AnalyzerDependency = Annotated[IssueAnalyzer, Depends(get_analyzer)]
+DuplicateAnalyzerDependency = Annotated[DuplicateAnalyzer, Depends(get_duplicate_analyzer)]
 NowDependency = Annotated[datetime, Depends(get_now)]
 
 
-def issue_response(issue: Issue, now: datetime) -> IssueResponse:
+def issue_response(snapshot: IssueSnapshot, now: datetime) -> IssueResponse:
+    effective_count = sum(report.confirmation_count for report in snapshot.source_reports)
+    priority_input = snapshot.issue.model_copy(update={"confirmation_count": effective_count})
     return IssueResponse(
-        **issue.model_dump(), priority=calculate_priority(issue, now=now)
+        **snapshot.issue.model_dump(), priority=calculate_priority(priority_input, now=now),
+        canonical_issue_id=snapshot.canonical_issue_id,
+        effective_confirmation_count=effective_count,
+        source_reports=snapshot.source_reports,
+        pending_duplicate_count=snapshot.pending_duplicate_count,
     )
+
+
+def require_snapshot(repository: IssueRepository, issue_id: UUID) -> IssueSnapshot:
+    snapshot = repository.snapshot(issue_id)
+    if snapshot is None:
+        raise HTTPException(status_code=404, detail="Issue not found")
+    return snapshot
 
 
 def require_issue(issue: Issue | None) -> Issue:
@@ -69,6 +92,7 @@ def create_app(
     clock: Clock = utc_now,
     cors_origins: Sequence[str] | None = None,
     analyzer: IssueAnalyzer | None = None,
+    duplicate_analyzer: DuplicateAnalyzer | None = None,
 ) -> FastAPI:
     app = FastAPI(
         title="TribeSignal",
@@ -78,12 +102,17 @@ def create_app(
         demo_mode = os.getenv("TRIBESIGNAL_DEMO_MODE", "").strip().lower() in {
             "1", "true", "yes", "on"
         }
+        demo_now = clock() if demo_mode else None
         repository = InMemoryIssueRepository(
-            initial_issues=build_demo_issues(clock()) if demo_mode else None
+            initial_issues=build_demo_issues(demo_now) if demo_now else None,
+            initial_suggestions=build_demo_suggestions(demo_now) if demo_now else None,
         )
     app.state.repository = repository
     app.state.clock = clock
     app.state.analyzer = analyzer if analyzer is not None else GeminiIssueAnalyzer()
+    app.state.duplicate_analyzer = (
+        duplicate_analyzer if duplicate_analyzer is not None else GeminiDuplicateAnalyzer()
+    )
     if cors_origins is None:
         configured_origins = os.getenv("TRIBESIGNAL_CORS_ORIGINS")
         cors_origins = (
@@ -118,25 +147,71 @@ def create_app(
         payload: IssueCreate, repository: RepositoryDependency, now: NowDependency
     ) -> IssueResponse:
         issue = Issue(**payload.model_dump(), id=uuid4(), created_at=now)
-        return issue_response(repository.add(issue), now)
+        repository.add(issue)
+        return issue_response(require_snapshot(repository, issue.id), now)
 
     @app.get("/issues", response_model=list[IssueResponse])
     def list_issues(
         repository: RepositoryDependency, now: NowDependency
     ) -> list[IssueResponse]:
-        return [issue_response(issue, now) for issue in repository.list()]
+        return [issue_response(issue, now) for issue in repository.queue()]
 
     @app.get("/issues/{issue_id}", response_model=IssueResponse)
     def get_issue(
         issue_id: UUID, repository: RepositoryDependency, now: NowDependency
     ) -> IssueResponse:
-        return issue_response(require_issue(repository.get(issue_id)), now)
+        return issue_response(require_snapshot(repository, issue_id), now)
 
     @app.post("/issues/{issue_id}/confirm", response_model=IssueResponse)
     def confirm_issue(
         issue_id: UUID, repository: RepositoryDependency, now: NowDependency
     ) -> IssueResponse:
-        return issue_response(require_issue(repository.confirm(issue_id)), now)
+        require_issue(repository.confirm(issue_id))
+        return issue_response(require_snapshot(repository, issue_id), now)
+
+    @app.get("/issues/{issue_id}/duplicate-suggestions", response_model=list[DuplicateSuggestionResponse])
+    def get_duplicate_suggestions(issue_id: UUID, repository: RepositoryDependency):
+        require_issue(repository.get(issue_id))
+        return repository.suggestions(issue_id)
+
+    @app.post("/issues/{issue_id}/duplicate-suggestions/analyze", response_model=DuplicateAnalysisResponse)
+    def check_duplicates(
+        issue_id: UUID, repository: RepositoryDependency,
+        analyzer: DuplicateAnalyzerDependency, now: NowDependency,
+    ):
+        issue = require_issue(repository.get(issue_id))
+        available, remaining = analyze_duplicates(issue, repository, analyzer, now)
+        return DuplicateAnalysisResponse(
+            status="complete" if available else "unavailable",
+            suggestions=repository.suggestions(issue_id), remaining_candidates=remaining,
+        )
+
+    def review_duplicate(suggestion_id, decision, repository, now):
+        try:
+            result = repository.review(suggestion_id, decision, now)
+        except ReviewConflict as error:
+            raise HTTPException(status_code=409, detail=str(error)) from None
+        if result is None:
+            raise HTTPException(status_code=404, detail="Duplicate suggestion not found")
+        suggestion, queue = result
+        return DuplicateReviewResponse(
+            suggestion=suggestion, issues=[issue_response(snapshot, now) for snapshot in queue],
+        )
+
+    @app.post("/duplicate-suggestions/{suggestion_id}/confirm", response_model=DuplicateReviewResponse)
+    def confirm_duplicate(
+        suggestion_id: UUID, repository: RepositoryDependency, now: NowDependency,
+        payload: DuplicateReviewRequest = DuplicateReviewRequest(),
+    ):
+        # Only this explicit human action establishes an association.
+        return review_duplicate(suggestion_id, "confirmed", repository, now)
+
+    @app.post("/duplicate-suggestions/{suggestion_id}/reject", response_model=DuplicateReviewResponse)
+    def reject_duplicate(
+        suggestion_id: UUID, repository: RepositoryDependency, now: NowDependency,
+        payload: DuplicateReviewRequest = DuplicateReviewRequest(),
+    ):
+        return review_duplicate(suggestion_id, "rejected", repository, now)
 
     return app
 

@@ -36,7 +36,7 @@ def test_demo_enabled_returns_seeded_issues(monkeypatch, now, value):
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 6
-        assert [{k: v for k, v in item.items() if k != "priority"} for item in data] == [
+        assert [{k: v for k, v in item.items() if k in Issue.model_fields} for item in data] == [
             issue.model_dump(mode="json") for issue in build_demo_issues(now)
         ]
 

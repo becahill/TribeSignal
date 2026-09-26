@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from unittest.mock import MagicMock
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -34,3 +36,12 @@ def payload():
 def client(now):
     with TestClient(create_app(clock=lambda: now)) as client:
         yield client
+
+
+@pytest.fixture(autouse=True)
+def no_live_gemini(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    factory = MagicMock(side_effect=AssertionError("Live Gemini client forbidden in tests"))
+    monkeypatch.setattr("app.ai.genai.Client", factory)
+    return factory
