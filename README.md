@@ -1,9 +1,57 @@
 # TribeSignal
-An AI-assisted triage layer for campus infrastructure issues, with optional report organization, human-reviewed duplicates, and transparent deterministic priority and routing.
+
+**Make campus problems visible.**
+
+An AI-assisted triage layer for campus infrastructure issues, with human-reviewed
+duplicate detection and transparent deterministic priority and routing.
 
 TribeSignal sits between community intake and operational teams/systems such as
 TMA/FAMIS. It is a transparent triage layer, not a replacement work-order system.
-AI never determines, adjusts, ranks, or overrides priority or chooses routing.
+AI can help structure reports and identify possible duplicates. It never determines
+severity, priority, or routing.
+
+<!-- TODO: Add a real product screenshot at docs/tribesignal-demo.png, then embed it here. -->
+
+## Quick Demo
+
+Prerequisites: **Python 3.11+**, **Node.js 22.12+**, and **npm** on macOS or Linux.
+
+Clone and launch the complete seeded TribeSignal demo:
+
+```bash
+git clone https://github.com/becahill/TribeSignal.git
+cd TribeSignal
+./demo.sh
+```
+
+Then open **<http://127.0.0.1:5173>**. The backend API runs at
+<http://127.0.0.1:8000>, with interactive API docs at <http://127.0.0.1:8000/docs>.
+
+**No Gemini API key is required for demo mode.** It uses deterministic fictional
+seed data and a clearly labeled duplicate-review fixture; the seeded walkthrough
+does not call Gemini. Setup installs backend dependencies into `backend/.venv`
+and frontend dependencies from the lockfile with `npm ci`, so dependency downloads
+require network access.
+
+Keep this terminal open; **Ctrl-C stops both services**. Relaunching restores the
+six-report seed dataset and discards changes from the previous session. The launcher
+runs without automatic reload and pins the API URL and CORS origin to the addresses
+above. Manual development commands and optional Gemini setup are documented below.
+
+## What to try
+
+1. Inspect the six seeded issues. Open **Possible duplicate** on
+   **Swem Library elevator unavailable** and inspect both original reports, the
+   explanation, and the message requiring human review.
+2. Select **Confirm same issue**. The operational queue consolidates from **six to
+   five issues**; the canonical Swem issue shows **2 community reports** and
+   **11 confirmations** (8 + 3), with the originals preserved.
+3. Expand **Why this priority?** to inspect the deterministic factors, then inspect
+   **Routes to: Facilities — Elevator Maintenance** and its category-based rule.
+4. Optionally submit another report with **Enter details manually**. With a
+   [backend-only Gemini key configured](#optional-gemini-assisted-intake), try
+   **Analyze report** to structure a report, then review and edit the proposal.
+   Gemini never determines severity, priority, or routing.
 
 ## Backend development
 
@@ -48,7 +96,8 @@ must be reviewed because the final human-approved flags are inputs to that formu
 
 To enable assistance, set **`GEMINI_API_KEY` in the backend environment only**.
 Optionally copy `backend/.env.example` to `backend/.env`, edit it locally, then
-load it before starting the backend (the application does not auto-load files):
+load it before starting the backend (neither the application nor `demo.sh`
+auto-loads `backend/.env`):
 
 ```sh
 set -a
@@ -56,6 +105,9 @@ source backend/.env
 set +a
 backend/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
 ```
+
+For the seeded demo with optional Gemini assistance, run `./demo.sh` instead of
+the Uvicorn command after loading the environment as shown above.
 
 Never put the key in a `VITE_` variable or frontend file. Local `.env` files are
 ignored; examples contain no credentials. The adapter uses the official
@@ -94,7 +146,8 @@ Browser verification after starting both services:
 
 ## Demo mode
 
-After backend setup, start from the repository root with:
+The recommended full demo is `./demo.sh` from [Quick Demo](#quick-demo). To start
+only the backend manually after setup, run from the repository root:
 
 ```sh
 TRIBESIGNAL_DEMO_MODE=true \
@@ -209,7 +262,8 @@ npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:5173>. The frontend calls <http://localhost:8000> directly;
+Open <http://127.0.0.1:5173>. In this manual setup, the frontend defaults to calling
+<http://localhost:8000> directly (`demo.sh` explicitly uses <http://127.0.0.1:8000>);
 the backend already allows this frontend origin through its development CORS
 configuration. Vite uses port 5173 strictly so a port conflict cannot silently
 move the app to an origin the backend does not allow.
@@ -232,7 +286,8 @@ Preview serves the production build at <http://127.0.0.1:5173> and requires the
 backend to be running. Stop the development server before starting preview.
 Fonts are bundled locally; no external font service is needed.
 
-For a quick demo, start with the empty queue, submit a high-severity elevator
+For a manual intake walkthrough, start the backend without `TRIBESIGNAL_DEMO_MODE`
+to get an empty queue, submit a high-severity elevator
 report with accessibility impact, then expand **Why this priority?**. Confirm it
 three times to see the backend score reach approximately 6.16 (aging may add more
 over time). Each confirmation refreshes the displayed issue from the response.
