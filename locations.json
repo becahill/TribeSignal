@@ -1,0 +1,1362 @@
+[
+  {
+    "id": "100",
+    "name": "Adair Hall",
+    "category": "Academic",
+    "grid": "B4",
+    "x": 624.23,
+    "y": 1278.81
+  },
+  {
+    "id": "102",
+    "name": "Andrews Hall",
+    "category": "Academic",
+    "grid": "C4",
+    "x": 991.74,
+    "y": 1279.08
+  },
+  {
+    "id": "103",
+    "name": "Boswell Hall",
+    "category": "Academic",
+    "grid": "C5",
+    "x": 804.22,
+    "y": 1479.38
+  },
+  {
+    "id": "104",
+    "name": "Bozarth Garage",
+    "category": "Academic",
+    "grid": "F2",
+    "x": 1789.24,
+    "y": 598.41
+  },
+  {
+    "id": "108",
+    "name": "Ceramics Studio",
+    "category": "Academic",
+    "grid": "F4",
+    "x": 1878.49,
+    "y": 1195.4
+  },
+  {
+    "id": "109",
+    "name": "Chancellors Hall",
+    "category": "Academic",
+    "grid": "E3",
+    "x": 1613.91,
+    "y": 787.84
+  },
+  {
+    "id": "110",
+    "name": "Davis House",
+    "category": "Academic",
+    "grid": "F3",
+    "x": 2020.81,
+    "y": 722.71
+  },
+  {
+    "id": "111",
+    "name": "Ewell Hall",
+    "category": "Academic",
+    "grid": "F4",
+    "x": 1720.51,
+    "y": 1010.7
+  },
+  {
+    "id": "112",
+    "name": "Gates Hall*",
+    "category": "Academic",
+    "grid": "F3",
+    "x": 2135.72,
+    "y": 725.47
+  },
+  {
+    "id": "115",
+    "name": "Holmes House",
+    "category": "Academic",
+    "grid": "E4",
+    "x": 1635.38,
+    "y": 1220.81
+  },
+  {
+    "id": "116",
+    "name": "Hornsby House",
+    "category": "Academic",
+    "grid": "E4",
+    "x": 1530.64,
+    "y": 1266.53
+  },
+  {
+    "id": "117",
+    "name": "Integrated Science Center",
+    "category": "Academic",
+    "grid": "D4",
+    "x": 1171.4,
+    "y": 1115.69
+  },
+  {
+    "id": "122",
+    "name": "James Blair Hall",
+    "category": "Academic",
+    "grid": "E3",
+    "x": 1476.81,
+    "y": 790.39
+  },
+  {
+    "id": "124",
+    "name": "Jones Hall",
+    "category": "Academic",
+    "grid": "C5",
+    "x": 815.29,
+    "y": 1370.26
+  },
+  {
+    "id": "126",
+    "name": "Keck Env. Field Lab",
+    "category": "Academic",
+    "grid": "A3",
+    "x": 117.22,
+    "y": 954.19
+  },
+  {
+    "id": "128",
+    "name": "Law School",
+    "category": "Academic",
+    "grid": "Ins C",
+    "x": 2290.58,
+    "y": 1595.34
+  },
+  {
+    "id": "130",
+    "name": "Matoaka Art Studio",
+    "category": "Academic",
+    "grid": "A5",
+    "x": 228.98,
+    "y": 1543.62
+  },
+  {
+    "id": "132",
+    "name": "McGlothlin-Street Hall",
+    "category": "Academic",
+    "grid": "E4",
+    "x": 1480.18,
+    "y": 1010.11
+  },
+  {
+    "id": "134",
+    "name": "Alan B. Miller Hall (Business School)",
+    "category": "Academic",
+    "grid": "B6",
+    "x": 620.13,
+    "y": 1671.28
+  },
+  {
+    "id": "136",
+    "name": "Music Arts Center",
+    "category": "Academic",
+    "grid": "D4",
+    "x": 1116.01,
+    "y": 1255.43
+  },
+  {
+    "id": "138",
+    "name": "Phi Beta Kappa Mem. Hall",
+    "category": "Academic",
+    "grid": "D5",
+    "x": 1022.26,
+    "y": 1332.02
+  },
+  {
+    "id": "139",
+    "name": "Population Lab",
+    "category": "Academic",
+    "grid": "Ins C",
+    "x": 2266.79,
+    "y": 1846.42
+  },
+  {
+    "id": "140",
+    "name": "School of Computing, Data Sciences & Physics",
+    "category": "Academic",
+    "grid": "D4",
+    "x": 1038.79,
+    "y": 1134.4
+  },
+  {
+    "id": "142",
+    "name": "School of Education",
+    "category": "Academic",
+    "grid": "Ins B",
+    "x": 1094.4,
+    "y": 2190.05
+  },
+  {
+    "id": "143",
+    "name": "Scotland 427",
+    "category": "Academic",
+    "grid": "G2",
+    "x": 2140.12,
+    "y": 389.16
+  },
+  {
+    "id": "144",
+    "name": "Small Hall",
+    "category": "Academic",
+    "grid": "C4",
+    "x": 811.44,
+    "y": 1252.48
+  },
+  {
+    "id": "146",
+    "name": "Tucker Hall",
+    "category": "Academic",
+    "grid": "F3",
+    "x": 1722.95,
+    "y": 783.68
+  },
+  {
+    "id": "150",
+    "name": "Washington Hall",
+    "category": "Academic",
+    "grid": "E4",
+    "x": 1617.31,
+    "y": 998.31
+  },
+  {
+    "id": "152",
+    "name": "Western Union Building",
+    "category": "Academic",
+    "grid": "F3",
+    "x": 1974.37,
+    "y": 754.01
+  },
+  {
+    "id": "154",
+    "name": "Wren Building",
+    "category": "Academic",
+    "grid": "F3",
+    "x": 1861.46,
+    "y": 890.41
+  },
+  {
+    "id": "156",
+    "name": "Wren Dependencies North",
+    "category": "Academic",
+    "grid": "F3",
+    "x": 1818.59,
+    "y": 795.75
+  },
+  {
+    "id": "200",
+    "name": "Admission (undergraduate)",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1848.91,
+    "y": 1137.34
+  },
+  {
+    "id": "202",
+    "name": "Alexander Galt",
+    "category": "Services & dining",
+    "grid": "Ins A",
+    "x": 441.03,
+    "y": 2094.89
+  },
+  {
+    "id": "204",
+    "name": "Alumni House",
+    "category": "Services & dining",
+    "grid": "D1",
+    "x": 1085.45,
+    "y": 312.98
+  },
+  {
+    "id": "205",
+    "name": "Barrett House",
+    "category": "Services & dining",
+    "grid": "G4",
+    "x": 2359.54,
+    "y": 988.18
+  },
+  {
+    "id": "206",
+    "name": "Bell Hall",
+    "category": "Services & dining",
+    "grid": "E5",
+    "x": 1450.72,
+    "y": 1351.37
+  },
+  {
+    "id": "208",
+    "name": "Blank House",
+    "category": "Services & dining",
+    "grid": "E5",
+    "x": 1572.18,
+    "y": 1303.66
+  },
+  {
+    "id": "210",
+    "name": "Blow Memorial Hall",
+    "category": "Services & dining",
+    "grid": "E2",
+    "x": 1544.76,
+    "y": 685.27
+  },
+  {
+    "id": "211",
+    "name": "Boundary 221",
+    "category": "Services & dining",
+    "grid": "G2",
+    "x": 2097.37,
+    "y": 554.63
+  },
+  {
+    "id": "212",
+    "name": "Brafferton",
+    "category": "Services & dining",
+    "grid": "F3",
+    "x": 1984.65,
+    "y": 937.82
+  },
+  {
+    "id": "214",
+    "name": "Brafferton Kitchen",
+    "category": "Services & dining",
+    "grid": "F3",
+    "x": 1915.42,
+    "y": 980.69
+  },
+  {
+    "id": "216",
+    "name": "Bridges House",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1760.54,
+    "y": 1166.71
+  },
+  {
+    "id": "218",
+    "name": "Bull House",
+    "category": "Services & dining",
+    "grid": "F2",
+    "x": 1898.27,
+    "y": 563.8
+  },
+  {
+    "id": "220",
+    "name": "Campus Center",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1961.0,
+    "y": 1122.94
+  },
+  {
+    "id": "221",
+    "name": "Campus Living Center",
+    "category": "Services & dining",
+    "grid": "C3",
+    "x": 913.0,
+    "y": 753.83
+  },
+  {
+    "id": "222",
+    "name": "Child Care Center",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1796.22,
+    "y": 1210.8
+  },
+  {
+    "id": "224",
+    "name": "Cohen Career Center",
+    "category": "Services & dining",
+    "grid": "D3",
+    "x": 1219.49,
+    "y": 699.68
+  },
+  {
+    "id": "227",
+    "name": "Commons Dining Hall",
+    "category": "Services & dining",
+    "grid": "A3",
+    "x": 372.72,
+    "y": 718.64
+  },
+  {
+    "id": "228",
+    "name": "Community Building",
+    "category": "Services & dining",
+    "grid": "B2",
+    "x": 595.16,
+    "y": 569.39
+  },
+  {
+    "id": "230",
+    "name": "Corner House",
+    "category": "Services & dining",
+    "grid": "E5",
+    "x": 1476.11,
+    "y": 1265.6
+  },
+  {
+    "id": "234",
+    "name": "Environmental Health & Safety",
+    "category": "Services & dining",
+    "grid": "G4",
+    "x": 2053.98,
+    "y": 1288.04
+  },
+  {
+    "id": "236",
+    "name": "Environmental Health & Safety Annex",
+    "category": "Services & dining",
+    "grid": "G4",
+    "x": 2044.91,
+    "y": 1220.14
+  },
+  {
+    "id": "238",
+    "name": "Facilities Management Admin",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1913.38,
+    "y": 1238.03
+  },
+  {
+    "id": "240",
+    "name": "Facilities Management Annex",
+    "category": "Services & dining",
+    "grid": "F5",
+    "x": 1851.25,
+    "y": 1268.89
+  },
+  {
+    "id": "242",
+    "name": "Facilities Management Shops",
+    "category": "Services & dining",
+    "grid": "F5",
+    "x": 1885.09,
+    "y": 1350.18
+  },
+  {
+    "id": "244",
+    "name": "Facilities Supervisors",
+    "category": "Services & dining",
+    "grid": "F5",
+    "x": 2026.88,
+    "y": 1327.42
+  },
+  {
+    "id": "248",
+    "name": "Griggs House",
+    "category": "Services & dining",
+    "grid": "E5",
+    "x": 1481.44,
+    "y": 1323.45
+  },
+  {
+    "id": "250",
+    "name": "Hoke House",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1783.89,
+    "y": 1113.86
+  },
+  {
+    "id": "252",
+    "name": "Hoke House Annex",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1799.26,
+    "y": 1173.63
+  },
+  {
+    "id": "254",
+    "name": "House 12",
+    "category": "Services & dining",
+    "grid": "F2",
+    "x": 1910.77,
+    "y": 606.61
+  },
+  {
+    "id": "258",
+    "name": "Lambert House",
+    "category": "Services & dining",
+    "grid": "E4",
+    "x": 1578.26,
+    "y": 1212.49
+  },
+  {
+    "id": "259",
+    "name": "Lodge 2 (Daily Grind)",
+    "category": "Services & dining",
+    "grid": "D3",
+    "x": 1175.94,
+    "y": 862.55
+  },
+  {
+    "id": "260",
+    "name": "Main Power Plant",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1973.91,
+    "y": 1249.45
+  },
+  {
+    "id": "262",
+    "name": "McLeod Tyler Wellness Center",
+    "category": "Services & dining",
+    "grid": "D3",
+    "x": 1059.69,
+    "y": 829.11
+  },
+  {
+    "id": "264",
+    "name": "Meridian Coffee House",
+    "category": "Services & dining",
+    "grid": "G4",
+    "x": 2042.31,
+    "y": 1247.37
+  },
+  {
+    "id": "266",
+    "name": "Minson Galt",
+    "category": "Services & dining",
+    "grid": "Ins A",
+    "x": 503.77,
+    "y": 2107.76
+  },
+  {
+    "id": "270",
+    "name": "Murray House",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1674.64,
+    "y": 1167.74
+  },
+  {
+    "id": "271",
+    "name": "North Henry 332",
+    "category": "Services & dining",
+    "grid": "G1",
+    "x": 2183.15,
+    "y": 314.71
+  },
+  {
+    "id": "272",
+    "name": "Parking Deck",
+    "category": "Services & dining",
+    "grid": "B5",
+    "x": 630.18,
+    "y": 1357.89
+  },
+  {
+    "id": "276",
+    "name": "Patrick Galt Annex",
+    "category": "Services & dining",
+    "grid": "Ins A",
+    "x": 532.81,
+    "y": 2116.73
+  },
+  {
+    "id": "278",
+    "name": "Police Department",
+    "category": "Services & dining",
+    "grid": "B5",
+    "x": 671.62,
+    "y": 1391.28
+  },
+  {
+    "id": "280",
+    "name": "Quonset Huts",
+    "category": "Services & dining",
+    "grid": "F5",
+    "x": 1816.38,
+    "y": 1361.29
+  },
+  {
+    "id": "282",
+    "name": "Reves Center",
+    "category": "Services & dining",
+    "grid": "G4",
+    "x": 2044.73,
+    "y": 1032.66
+  },
+  {
+    "id": "284",
+    "name": "Rowe House",
+    "category": "Services & dining",
+    "grid": "E4",
+    "x": 1583.61,
+    "y": 1258.25
+  },
+  {
+    "id": "285",
+    "name": "Sadler Center",
+    "category": "Services & dining",
+    "grid": "D3",
+    "x": 1127.82,
+    "y": 764.23
+  },
+  {
+    "id": "286",
+    "name": "Samuel E. Jones House",
+    "category": "Services & dining",
+    "grid": "F3",
+    "x": 2011.9,
+    "y": 670.61
+  },
+  {
+    "id": "287",
+    "name": "Shenkman Jewish Center",
+    "category": "Services & dining",
+    "grid": "E5",
+    "x": 1405.49,
+    "y": 1304.26
+  },
+  {
+    "id": "288",
+    "name": "Stetson House",
+    "category": "Services & dining",
+    "grid": "F4",
+    "x": 1720.64,
+    "y": 1141.39
+  },
+  {
+    "id": "289",
+    "name": "Swem Library",
+    "category": "Services & dining",
+    "grid": "C4",
+    "x": 929.19,
+    "y": 1045.73
+  },
+  {
+    "id": "290",
+    "name": "Travis House",
+    "category": "Services & dining",
+    "grid": "G4",
+    "x": 2341.58,
+    "y": 1067.44
+  },
+  {
+    "id": "291",
+    "name": "W&M Bookstore",
+    "category": "Services & dining",
+    "grid": "F2",
+    "x": 1799.86,
+    "y": 474.99
+  },
+  {
+    "id": "292",
+    "name": "West Utility Plant",
+    "category": "Services & dining",
+    "grid": "B4",
+    "x": 656.84,
+    "y": 1216.99
+  },
+  {
+    "id": "293",
+    "name": "West Woods Commons",
+    "category": "Services & dining",
+    "grid": "C3",
+    "x": 688.5,
+    "y": 752.65
+  },
+  {
+    "id": "294",
+    "name": "Williamsburg Professional Centre",
+    "category": "Services & dining",
+    "grid": "Ins B",
+    "x": 992.64,
+    "y": 2010.61
+  },
+  {
+    "id": "296",
+    "name": "Young House",
+    "category": "Services & dining",
+    "grid": "E5",
+    "x": 1604.14,
+    "y": 1395.79
+  },
+  {
+    "id": "300",
+    "name": "Albert-Daly Field",
+    "category": "Athletics & recreation",
+    "grid": "Ins A",
+    "x": 186.97,
+    "y": 2053.53
+  },
+  {
+    "id": "302",
+    "name": "Barksdale Field",
+    "category": "Athletics & recreation",
+    "grid": "D4",
+    "x": 1215.88,
+    "y": 1266.45
+  },
+  {
+    "id": "303",
+    "name": "(The) Bee McLeod Recreation Center",
+    "category": "Athletics & recreation",
+    "grid": "A1",
+    "x": 218.38,
+    "y": 328.91
+  },
+  {
+    "id": "304",
+    "name": "Busch Field",
+    "category": "Athletics & recreation",
+    "grid": "A2",
+    "x": 172.04,
+    "y": 635.99
+  },
+  {
+    "id": "305",
+    "name": "Dillard Practice Fields",
+    "category": "Athletics & recreation",
+    "grid": "Ins A",
+    "x": 362.98,
+    "y": 2160.83
+  },
+  {
+    "id": "306",
+    "name": "Intramural Fields",
+    "category": "Athletics & recreation",
+    "grid": "C1",
+    "x": 610.2,
+    "y": 99.07
+  },
+  {
+    "id": "307",
+    "name": "Jill Ellis Field",
+    "category": "Athletics & recreation",
+    "grid": "Ins A",
+    "x": 406.77,
+    "y": 2142.01
+  },
+  {
+    "id": "308",
+    "name": "Kaplan Arena",
+    "category": "Athletics & recreation",
+    "grid": "B2",
+    "x": 411.56,
+    "y": 469.5
+  },
+  {
+    "id": "310",
+    "name": "Laycock Football Center",
+    "category": "Athletics & recreation",
+    "grid": "C2",
+    "x": 1007.99,
+    "y": 447.56
+  },
+  {
+    "id": "312",
+    "name": "Mackesy Sports Performance Center",
+    "category": "Athletics & recreation",
+    "grid": "A2",
+    "x": 333.95,
+    "y": 365.67
+  },
+  {
+    "id": "315",
+    "name": "Mackesy Tennis Center",
+    "category": "Athletics & recreation",
+    "grid": "A2",
+    "x": 206.86,
+    "y": 462.57
+  },
+  {
+    "id": "316",
+    "name": "Martin Family Stadium",
+    "category": "Athletics & recreation",
+    "grid": "Ins A",
+    "x": 248.05,
+    "y": 2063.05
+  },
+  {
+    "id": "318",
+    "name": "Matoaka Boathouse",
+    "category": "Athletics & recreation",
+    "grid": "A6",
+    "x": 77.33,
+    "y": 1822.37
+  },
+  {
+    "id": "320",
+    "name": "McCormack-Nagelsen Tennis Center",
+    "category": "Athletics & recreation",
+    "grid": "Ins C",
+    "x": 2338.02,
+    "y": 1824.88
+  },
+  {
+    "id": "324",
+    "name": "Montgomery Field",
+    "category": "Athletics & recreation",
+    "grid": "C2",
+    "x": 933.49,
+    "y": 562.38
+  },
+  {
+    "id": "326",
+    "name": "Plumeri Park",
+    "category": "Athletics & recreation",
+    "grid": "Ins A",
+    "x": 208.38,
+    "y": 2148.36
+  },
+  {
+    "id": "328",
+    "name": "Stimson Throwing Events Area",
+    "category": "Athletics & recreation",
+    "grid": "B1",
+    "x": 755.67,
+    "y": 221.98
+  },
+  {
+    "id": "332",
+    "name": "Tennis Courts",
+    "category": "Athletics & recreation",
+    "grid": "B3",
+    "x": 375.31,
+    "y": 838.73
+  },
+  {
+    "id": "333",
+    "name": "Tribe Field Hockey Center",
+    "category": "Athletics & recreation",
+    "grid": "A3",
+    "x": 138.71,
+    "y": 745.52
+  },
+  {
+    "id": "334",
+    "name": "Zable Stadium at Cary Field",
+    "category": "Athletics & recreation",
+    "grid": "D2",
+    "x": 1136.95,
+    "y": 561.92
+  },
+  {
+    "id": "400",
+    "name": "Amphitheatre Ticket Office",
+    "category": "Arts & events",
+    "grid": "A6",
+    "x": 248.21,
+    "y": 1657.41
+  },
+  {
+    "id": "401",
+    "name": "Hearth: Memorial to the Enslaved",
+    "category": "Arts & events",
+    "grid": "F4",
+    "x": 1855.26,
+    "y": 1006.66
+  },
+  {
+    "id": "403",
+    "name": "Martha Wren Briggs Amphitheatre",
+    "category": "Arts & events",
+    "grid": "A6",
+    "x": 80.35,
+    "y": 1701.73
+  },
+  {
+    "id": "404",
+    "name": "Muscarelle Museum of Art",
+    "category": "Arts & events",
+    "grid": "C5",
+    "x": 936.74,
+    "y": 1388.25
+  },
+  {
+    "id": "406",
+    "name": "Plumeri House",
+    "category": "Arts & events",
+    "grid": "F4",
+    "x": 1718.77,
+    "y": 1256.08
+  },
+  {
+    "id": "408",
+    "name": "President\u2019s House",
+    "category": "Arts & events",
+    "grid": "F3",
+    "x": 1962.64,
+    "y": 838.04
+  },
+  {
+    "id": "410",
+    "name": "President\u2019s Guest House",
+    "category": "Arts & events",
+    "grid": "F3",
+    "x": 1866.63,
+    "y": 820.36
+  },
+  {
+    "id": "414",
+    "name": "Unity Hall",
+    "category": "Arts & events",
+    "grid": "F4",
+    "x": 1962.5,
+    "y": 1178.75
+  },
+  {
+    "id": "500",
+    "name": "Barrett",
+    "category": "Student housing",
+    "grid": "E4",
+    "x": 1552.2,
+    "y": 1160.26
+  },
+  {
+    "id": "504",
+    "name": "Bryan",
+    "category": "Student housing",
+    "grid": "E2",
+    "x": 1381.91,
+    "y": 546.42
+  },
+  {
+    "id": "508",
+    "name": "Camm",
+    "category": "Student housing",
+    "grid": "D2",
+    "x": 1315.69,
+    "y": 486.55
+  },
+  {
+    "id": "509",
+    "name": "Cedar",
+    "category": "Student housing",
+    "grid": "E4",
+    "x": 1405.86,
+    "y": 1242.18
+  },
+  {
+    "id": "510",
+    "name": "Chandler",
+    "category": "Student housing",
+    "grid": "E4",
+    "x": 1411.07,
+    "y": 1103.33
+  },
+  {
+    "id": "516",
+    "name": "Dawson",
+    "category": "Student housing",
+    "grid": "E2",
+    "x": 1347.23,
+    "y": 507.05
+  },
+  {
+    "id": "518",
+    "name": "Dinwiddie",
+    "category": "Student housing",
+    "grid": "A4",
+    "x": 159.97,
+    "y": 992.01
+  },
+  {
+    "id": "520",
+    "name": "DuPont",
+    "category": "Student housing",
+    "grid": "B4",
+    "x": 425.5,
+    "y": 1077.99
+  },
+  {
+    "id": "522",
+    "name": "Eagle F-J",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 695.05,
+    "y": 258.65
+  },
+  {
+    "id": "524",
+    "name": "Fauquier",
+    "category": "Student housing",
+    "grid": "A4",
+    "x": 268.99,
+    "y": 964.89
+  },
+  {
+    "id": "528",
+    "name": "Gooch",
+    "category": "Student housing",
+    "grid": "A4",
+    "x": 245.71,
+    "y": 1051.01
+  },
+  {
+    "id": "530",
+    "name": "Graduate Housing",
+    "category": "Student housing",
+    "grid": "Ins C",
+    "x": 2337.22,
+    "y": 1679.24
+  },
+  {
+    "id": "532",
+    "name": "Griffin A-E",
+    "category": "Student housing",
+    "grid": "B2",
+    "x": 626.12,
+    "y": 427.59
+  },
+  {
+    "id": "534",
+    "name": "Hardy",
+    "category": "Student housing",
+    "grid": "D4",
+    "x": 1345.59,
+    "y": 1156.44
+  },
+  {
+    "id": "538",
+    "name": "House 1",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 2000.81,
+    "y": 782.7
+  },
+  {
+    "id": "540",
+    "name": "House 2",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1967.17,
+    "y": 719.32
+  },
+  {
+    "id": "542",
+    "name": "House 3",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1971.57,
+    "y": 670.7
+  },
+  {
+    "id": "544",
+    "name": "House 4",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1991.19,
+    "y": 628.97
+  },
+  {
+    "id": "546",
+    "name": "House 5",
+    "category": "Student housing",
+    "grid": "F2",
+    "x": 1932.11,
+    "y": 643.11
+  },
+  {
+    "id": "548",
+    "name": "House 6",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1917.8,
+    "y": 677.84
+  },
+  {
+    "id": "550",
+    "name": "House 7",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1914.23,
+    "y": 730.76
+  },
+  {
+    "id": "552",
+    "name": "House 8",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1871.73,
+    "y": 701.95
+  },
+  {
+    "id": "554",
+    "name": "House 9",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1829.75,
+    "y": 671.66
+  },
+  {
+    "id": "556",
+    "name": "House 10",
+    "category": "Student housing",
+    "grid": "F3",
+    "x": 1774.98,
+    "y": 647.72
+  },
+  {
+    "id": "558",
+    "name": "House 11",
+    "category": "Student housing",
+    "grid": "F2",
+    "x": 1874.24,
+    "y": 647.4
+  },
+  {
+    "id": "562",
+    "name": "House 620",
+    "category": "Student housing",
+    "grid": "B3",
+    "x": 517.52,
+    "y": 728.16
+  },
+  {
+    "id": "564",
+    "name": "House 630",
+    "category": "Student housing",
+    "grid": "B3",
+    "x": 558.07,
+    "y": 693.51
+  },
+  {
+    "id": "566",
+    "name": "House 640",
+    "category": "Student housing",
+    "grid": "B2",
+    "x": 547.63,
+    "y": 627.97
+  },
+  {
+    "id": "568",
+    "name": "House 660",
+    "category": "Student housing",
+    "grid": "B2",
+    "x": 659.6,
+    "y": 584.31
+  },
+  {
+    "id": "570",
+    "name": "House 670",
+    "category": "Student housing",
+    "grid": "B2",
+    "x": 729.93,
+    "y": 578.74
+  },
+  {
+    "id": "572",
+    "name": "House 710",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 607.81,
+    "y": 343.06
+  },
+  {
+    "id": "574",
+    "name": "House 720",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 568.88,
+    "y": 293.8
+  },
+  {
+    "id": "576",
+    "name": "House 730",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 599.06,
+    "y": 260.3
+  },
+  {
+    "id": "578",
+    "name": "House 740",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 570.35,
+    "y": 213.32
+  },
+  {
+    "id": "580",
+    "name": "House 750",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 623.99,
+    "y": 219.81
+  },
+  {
+    "id": "582",
+    "name": "House 760",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 641.67,
+    "y": 183.01
+  },
+  {
+    "id": "586",
+    "name": "Hunt",
+    "category": "Student housing",
+    "grid": "G4",
+    "x": 2057.8,
+    "y": 1171.26
+  },
+  {
+    "id": "588",
+    "name": "Jefferson",
+    "category": "Student housing",
+    "grid": "F4",
+    "x": 1686.5,
+    "y": 1100.15
+  },
+  {
+    "id": "590",
+    "name": "Landrum",
+    "category": "Student housing",
+    "grid": "D4",
+    "x": 1271.95,
+    "y": 1037.11
+  },
+  {
+    "id": "592",
+    "name": "Lemon",
+    "category": "Student housing",
+    "grid": "D4",
+    "x": 1335.11,
+    "y": 1285.66
+  },
+  {
+    "id": "594",
+    "name": "Lion K-M",
+    "category": "Student housing",
+    "grid": "B1",
+    "x": 713.89,
+    "y": 366.16
+  },
+  {
+    "id": "596",
+    "name": "Ludwell Apts. (100-700)",
+    "category": "Student housing",
+    "grid": "Ins D",
+    "x": 1492.28,
+    "y": 2066.71
+  },
+  {
+    "id": "600",
+    "name": "Madison",
+    "category": "Student housing",
+    "grid": "D2",
+    "x": 1307.26,
+    "y": 588.59
+  },
+  {
+    "id": "602",
+    "name": "Maple",
+    "category": "Student housing",
+    "grid": "B3",
+    "x": 609.68,
+    "y": 670.8
+  },
+  {
+    "id": "604",
+    "name": "Monroe",
+    "category": "Student housing",
+    "grid": "E3",
+    "x": 1666.57,
+    "y": 675.42
+  },
+  {
+    "id": "610",
+    "name": "Nicholson",
+    "category": "Student housing",
+    "grid": "A4",
+    "x": 166.58,
+    "y": 1064.03
+  },
+  {
+    "id": "611",
+    "name": "Oak",
+    "category": "Student housing",
+    "grid": "C3",
+    "x": 704.66,
+    "y": 834.77
+  },
+  {
+    "id": "612",
+    "name": "Old Dominion",
+    "category": "Student housing",
+    "grid": "E3",
+    "x": 1418.56,
+    "y": 678.95
+  },
+  {
+    "id": "614",
+    "name": "One Tribe Place",
+    "category": "Student housing",
+    "grid": "D1",
+    "x": 1342.0,
+    "y": 263.46
+  },
+  {
+    "id": "616",
+    "name": "Pine",
+    "category": "Student housing",
+    "grid": "C3",
+    "x": 708.37,
+    "y": 642.79
+  },
+  {
+    "id": "619",
+    "name": "Poplar",
+    "category": "Student housing",
+    "grid": "B2",
+    "x": 609.5,
+    "y": 616.73
+  },
+  {
+    "id": "622",
+    "name": "Reves",
+    "category": "Student housing",
+    "grid": "G4",
+    "x": 2047.68,
+    "y": 1070.35
+  },
+  {
+    "id": "624",
+    "name": "Richmond",
+    "category": "Student housing",
+    "grid": "Ins E",
+    "x": 2026.29,
+    "y": 2128.1
+  },
+  {
+    "id": "626",
+    "name": "Spotswood",
+    "category": "Student housing",
+    "grid": "A3",
+    "x": 331.98,
+    "y": 954.35
+  },
+  {
+    "id": "628",
+    "name": "Stith",
+    "category": "Student housing",
+    "grid": "E2",
+    "x": 1349.28,
+    "y": 586.01
+  },
+  {
+    "id": "634",
+    "name": "Tribe Square",
+    "category": "Student housing",
+    "grid": "E2",
+    "x": 1573.64,
+    "y": 517.65
+  },
+  {
+    "id": "638",
+    "name": "Willis",
+    "category": "Student housing",
+    "grid": "F4",
+    "x": 1887.91,
+    "y": 1091.86
+  }
+]
